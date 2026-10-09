@@ -1,4 +1,4 @@
-# Hilvana — Plan de la app (v0.1)
+# Hilvana — Plan de la app (v0.2)
 
 > App Android "todo en uno" para notas, tareas, ideas y recordatorios, con una
 > **burbuja flotante** siempre a mano para capturar en segundos, y **widgets**
@@ -142,8 +142,38 @@ burbuja flotante, sería otra estrategia de producto.)
 | Tareas en segundo plano | WorkManager (respaldos, limpieza, sync) |
 | Voz a texto | `SpeechRecognizer` de Android (gratis, en el dispositivo cuando se puede) |
 | Fechas en lenguaje natural | Parser propio en español para empezar ("mañana", "el viernes a las 5", "en 2 horas") |
-| Sincronización (fase 2) | Firebase (Auth + Firestore) o Supabase |
+| Inicio de sesión con Google | Credential Manager (botón "Continuar con Google") + Firebase Auth |
+| Respaldo/sincronización en la nube | Firebase Firestore (solo para cuentas Google) |
 | Versión mínima | Android 8.0 (API 26) — cubre >95% de dispositivos |
+
+> **Pensando en iPhone a futuro:** la lógica (modelo de datos, parser de fechas,
+> reglas de recordatorios) se escribe en Kotlin puro, separada de la interfaz.
+> Así, cuando llegue iOS, se puede reutilizar con **Kotlin Multiplatform** en vez
+> de reescribirla. Firebase también funciona en iOS, así que las cuentas Google
+> servirán en ambos.
+
+---
+
+## 6.1 Cuentas: dos modos
+
+Al abrir la app por primera vez, el usuario elige:
+
+| | **Cuenta Google** | **Perfil local** |
+|---|---|---|
+| Cómo entra | Botón "Continuar con Google" | Escribe su nombre (y opcionalmente una foto/avatar) |
+| Dónde viven sus datos | En el teléfono **y** respaldados en la nube | Solo en el teléfono |
+| Si cambia de teléfono | Inicia sesión y recupera todo | Debe exportar/importar un respaldo manual |
+| Necesita internet | Solo para sincronizar (la app funciona sin señal) | Nunca |
+
+Reglas importantes:
+- **Ambos modos guardan todo localmente primero** (Room). La nube es una copia,
+  no la fuente principal → la app es igual de rápida en los dos modos.
+- **Pasar de local a Google** debe ser fácil: "Conectar mi cuenta Google" en
+  Ajustes sube todas sus notas sin perder nada. (Es la forma natural de que los
+  usuarios locales terminen respaldando.)
+- Cerrar sesión de Google pregunta si conservar una copia local.
+- Opción de **bloqueo con huella/PIN** para ambos modos (las notas son privadas).
+- Eliminar cuenta y datos desde la app (Google Play lo exige si hay cuentas).
 
 ---
 
@@ -206,20 +236,48 @@ No todo el mundo aceptará la burbuja. La app debe seguir siendo genial sin ella
 
 ### 7.7 Respaldo de datos
 Si el usuario pierde o cambia el teléfono y pierde sus notas, la app muere.
-Desde el MVP: **exportar/importar** (JSON) y respaldo automático de Android;
-sincronización en la nube en la fase 2.
+Desde el MVP: **respaldo en la nube** para cuentas Google, y para perfiles
+locales **exportar/importar** (archivo) + respaldo automático de Android.
 
 ---
 
 ## 8. Alcance por fases
 
-### Fase 0 — Prototipo técnico (1–2 semanas)
+> Tiempos ajustados para alguien con experiencia en web/software pero **nuevo en
+> Android**. Son estimaciones trabajando a ritmo constante; lo importante es el
+> orden, no la fecha.
+
+### Fase A — Aprender lo necesario de Android (2–3 semanas)
+Ya sabes programar, así que no es empezar de cero: es aprender un "dialecto".
+
+| Lo que ya conoces (web) | Su equivalente en Android |
+|---|---|
+| JavaScript / TypeScript | **Kotlin** (muy parecido a TypeScript) |
+| Componentes de React / Vue | **Composables** de Jetpack Compose |
+| `useState` / estado reactivo | `remember`, `StateFlow`, ViewModel |
+| npm / package.json | **Gradle** / `build.gradle.kts` |
+| SQL / base de datos local | **Room** (SQLite con anotaciones) |
+| Rutas (React Router) | Navigation Compose |
+| Service workers / tareas en segundo plano | Services, WorkManager, AlarmManager |
+| Permisos del navegador | Permisos de Android (más estrictos y variados) |
+
+Ruta de aprendizaje sugerida:
+1. **Kotlin básico** — kotlinlang.org "Kotlin Tour" (2–4 días).
+2. **Curso oficial gratuito "Android Basics with Compose"** de Google
+   (developer.android.com/courses) — unidades 1 a 6 (1–2 semanas).
+3. **Room + ViewModel + Navigation** (incluido en el curso, unidades 5–6).
+4. Instalar **Android Studio** y usar el emulador + un teléfono real con
+   "depuración USB" activada.
+
+### Fase 0 — Prototipo técnico (2–3 semanas)
 Objetivo: comprobar que lo difícil funciona.
 - [ ] Burbuja flotante que sobrevive en Samsung y Xiaomi (los peores casos).
 - [ ] Mini-panel de captura que guarda en Room.
 - [ ] Un recordatorio exacto que suene con la app cerrada.
 
-### Fase 1 — MVP (6–10 semanas)
+### Fase 1 — MVP (10–14 semanas)
+- [ ] Elegir modo: **cuenta Google** o **perfil local con nombre**.
+- [ ] Respaldo automático en la nube para cuentas Google.
 - [ ] Onboarding de permisos (burbuja, notificaciones, alarmas, batería).
 - [ ] Burbuja: captura de texto, mover, ocultar, ajustes básicos.
 - [ ] Bandeja, Notas, Tareas (con checklist), Recordatorios.
@@ -234,7 +292,8 @@ Objetivo: comprobar que lo difícil funciona.
 ### Fase 2 — Crecimiento
 - [ ] Notas de voz desde la burbuja (mantener presionado).
 - [ ] Resto de widgets (Próximo recordatorio, Nota fijada, Semana).
-- [ ] Cuenta + sincronización en la nube + versión web de solo lectura.
+- [ ] Sincronización entre varios dispositivos + versión web de solo lectura.
+- [ ] Bloqueo con huella/PIN.
 - [ ] Tareas repetitivas avanzadas, subtareas, prioridades.
 - [ ] Adjuntar fotos; capturar texto de pantalla (OCR).
 
@@ -245,15 +304,32 @@ Objetivo: comprobar que lo difícil funciona.
 - [ ] Resumen diario/semanal ("Esto quedó pendiente").
 - [ ] Listas compartidas con familia/pareja.
 
+### Fase 4 — iPhone (si la app funciona bien en Android)
+- [ ] Reutilizar la lógica con Kotlin Multiplatform; interfaz en SwiftUI o
+      Compose Multiplatform.
+- [ ] En iOS **no hay burbuja flotante**: la captura rápida será con widgets,
+      Atajos de Siri, el Botón de Acción y widgets en la pantalla de bloqueo.
+
 ---
 
 ## 9. Modelo de negocio (sugerencia)
 
-**Freemium**, sin anuncios (los anuncios en una app de notas personales dan mala
-imagen y espantan usuarios):
-- **Gratis**: burbuja, notas, tareas, recordatorios, 2 widgets, respaldo manual.
-- **Hilvana Pro** (suscripción baja o pago único): sincronización en la nube,
-  todos los widgets, temas, voz ilimitada, IA, adjuntos.
+**Decisión: 100% gratis al lanzar.** Si la app crece, se agregan funciones
+extra y algunas pueden ser de pago (freemium), sin anuncios (los anuncios en una
+app de notas personales dan mala imagen y espantan usuarios).
+
+- **Siempre gratis**: burbuja, notas, tareas, recordatorios, widgets básicos,
+  cuenta Google con respaldo, perfil local.
+- **Posible "Hilvana Pro" a futuro**: IA (auto-clasificación, resúmenes),
+  recordatorios por ubicación, listas compartidas, temas extra, adjuntos grandes.
+
+Reglas para no arrepentirse después:
+- **Nunca quitar** algo que ya era gratis para cobrarlo — genera malas reseñas.
+  Lo de pago deben ser funciones **nuevas**.
+- Desde el MVP, tener un "interruptor" interno de funciones (feature flags) para
+  que agregar Pro después no requiera reescribir la app.
+- Cuando llegue el momento, el cobro se hace con **Google Play Billing**
+  (Google se queda con 15% de los primeros USD 1M al año).
 
 ## 10. Métricas para saber si funciona
 
@@ -290,11 +366,17 @@ imagen y espantan usuarios):
 
 ---
 
-## 13. Preguntas abiertas (por decidir)
+## 13. Decisiones tomadas
 
-- [ ] ¿Solo Android o también iPhone en el futuro?
-- [ ] ¿Cuenta/inicio de sesión desde el MVP o solo local al inicio?
-- [ ] ¿Gratis, freemium o de pago?
+- ✅ **Plataforma**: solo Android por ahora; iPhone después si la app funciona.
+- ✅ **Cuentas**: dos modos — cuenta Google (con respaldo en la nube) o perfil
+  local con el nombre que el usuario escriba.
+- ✅ **Precio**: gratis al lanzar; funciones de pago nuevas más adelante si crece.
+- ✅ **Experiencia**: experiencia en web y software, nuevo en Android → se agrega
+  la Fase A de aprendizaje y se ajustan los tiempos.
+
+## 14. Preguntas abiertas (por decidir)
+
 - [ ] ¿Idioma: solo español al inicio o español + inglés?
-- [ ] ¿Experiencia de programación del equipo (para ajustar tiempos)?
 - [ ] ¿Identidad visual: colores, logo, estilo de la burbuja?
+- [ ] ¿Qué teléfono(s) Android tienes para probar? (marca y versión)
