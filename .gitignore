@@ -1,0 +1,20 @@
+# Android
+*.iml
+.gradle/
+.idea/
+local.properties
+.DS_Store
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.jks
+*.keystore
+
+# Firebase — nunca commitear
+google-services.json
+
+# Kotlin
+*.class
