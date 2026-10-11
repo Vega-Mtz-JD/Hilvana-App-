@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
-    alias(libs.plugins.google.services)
+    // alias(libs.plugins.google.services)  // activar en Fase 1 con Firebase
 }
 
 android {
@@ -78,14 +78,14 @@ dependencies {
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)
 
-    // Firebase
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth.ktx)
-    implementation(libs.firebase.firestore.ktx)
+    // Firebase — comentado hasta Fase 1
+    // implementation(platform(libs.firebase.bom))
+    // implementation(libs.firebase.auth.ktx)
+    // implementation(libs.firebase.firestore.ktx)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
-    implementation(libs.kotlinx.coroutines.play.services)
+    // implementation(libs.kotlinx.coroutines.play.services)  // solo con Firebase
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)
