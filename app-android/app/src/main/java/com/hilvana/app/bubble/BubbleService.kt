@@ -28,6 +28,9 @@ import com.hilvana.app.MainActivity
 import com.hilvana.app.data.Item
 import com.hilvana.app.data.ItemType
 import com.hilvana.app.database
+import com.hilvana.app.reminder.ReminderScheduler
+import java.text.DateFormat
+import java.util.Date
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -178,10 +181,19 @@ class BubbleService : Service() {
         capturePanel.show()
     }
 
-    private fun saveCapture(text: String, type: ItemType) {
+    private fun saveCapture(text: String, type: ItemType, dueAt: Long?) {
         scope.launch {
-            database.itemDao().insert(Item(text = text, type = type))
-            Toast.makeText(this@BubbleService, "Guardado en la Bandeja", Toast.LENGTH_SHORT).show()
+            val item = Item(text = text, type = type, dueAt = dueAt)
+            val id = database.itemDao().insert(item)
+
+            val message = if (dueAt == null) {
+                "Guardado en la Bandeja"
+            } else {
+                val exact = ReminderScheduler.schedule(this@BubbleService, item.copy(id = id))
+                val time = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(dueAt))
+                if (exact) "Te aviso a las $time" else "Te aviso cerca de las $time (activa las alarmas exactas)"
+            }
+            Toast.makeText(this@BubbleService, message, Toast.LENGTH_SHORT).show()
         }
     }
 

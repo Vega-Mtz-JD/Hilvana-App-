@@ -43,6 +43,7 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.hilvana.app.data.ItemType
 import com.hilvana.app.ui.theme.HilvanaTheme
+import java.util.Calendar
 
 /**
  * Mini-panel de captura que se abre al tocar la burbuja, encima de la app actual.
@@ -52,7 +53,7 @@ import com.hilvana.app.ui.theme.HilvanaTheme
 class CapturePanel(
     private val context: Context,
     private val windowManager: WindowManager,
-    private val onSave: (text: String, type: ItemType) -> Unit,
+    private val onSave: (text: String, type: ItemType, dueAt: Long?) -> Unit,
     private val onClosed: () -> Unit,
 ) {
     private var root: FrameLayout? = null
@@ -68,8 +69,8 @@ class CapturePanel(
             setContent {
                 HilvanaTheme {
                     CapturePanelContent(
-                        onSave = { text, type ->
-                            onSave(text, type)
+                        onSave = { text, type, dueAt ->
+                            onSave(text, type, dueAt)
                             dismiss()
                         },
                         onDismiss = ::dismiss,
@@ -119,13 +120,37 @@ class CapturePanel(
     }
 }
 
+/** Horas rápidas para el prototipo; el MVP entenderá texto como "mañana a las 5". */
+private enum class QuickTime(val label: String) {
+    IN_1_MIN("En 1 min"),
+    IN_10_MIN("En 10 min"),
+    IN_1_HOUR("En 1 hora"),
+    TOMORROW_9("Mañana 9:00");
+
+    fun toMillis(now: Long = System.currentTimeMillis()): Long = when (this) {
+        IN_1_MIN -> now + 60_000L
+        IN_10_MIN -> now + 10 * 60_000L
+        IN_1_HOUR -> now + 60 * 60_000L
+        TOMORROW_9 -> Calendar.getInstance().apply {
+            timeInMillis = now
+            add(Calendar.DAY_OF_YEAR, 1)
+            set(Calendar.HOUR_OF_DAY, 9)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    }
+}
+
 @Composable
 private fun CapturePanelContent(
-    onSave: (String, ItemType) -> Unit,
+    onSave: (String, ItemType, Long?) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var text by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf<ItemType?>(null) }
+    var quickTime by remember { mutableStateOf<QuickTime?>(null) }
+    val isReminder = selectedType == ItemType.REMINDER
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
@@ -184,14 +209,34 @@ private fun CapturePanelContent(
                     }
                 }
 
+                if (isReminder) {
+                    Text("¿Cuándo te aviso?", style = MaterialTheme.typography.labelLarge)
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        QuickTime.entries.forEach { option ->
+                            FilterChip(
+                                selected = quickTime == option,
+                                onClick = { quickTime = option },
+                                label = { Text(option.label) },
+                            )
+                        }
+                    }
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
                 ) {
                     TextButton(onClick = onDismiss) { Text("Cancelar") }
                     Button(
-                        onClick = { onSave(text.trim(), selectedType ?: ItemType.NOTE) },
-                        enabled = text.isNotBlank(),
+                        onClick = {
+                            val dueAt = if (isReminder) quickTime?.toMillis() else null
+                            onSave(text.trim(), selectedType ?: ItemType.NOTE, dueAt)
+                        },
+                        // Un recordatorio necesita hora.
+                        enabled = text.isNotBlank() && (!isReminder || quickTime != null),
                     ) { Text("Guardar") }
                 }
             }

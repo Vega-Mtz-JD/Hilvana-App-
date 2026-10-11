@@ -271,9 +271,11 @@ Ruta de aprendizaje sugerida:
 
 ### Fase 0 — Prototipo técnico (2–3 semanas)
 Objetivo: comprobar que lo difícil funciona.
-- [ ] Burbuja flotante que sobrevive en Samsung y Xiaomi (los peores casos).
-- [ ] Mini-panel de captura que guarda en Room.
-- [ ] Un recordatorio exacto que suene con la app cerrada.
+- [x] Burbuja flotante que sobrevive en Samsung y Xiaomi (los peores casos).
+      *(probada en Xiaomi Redmi Note 13 / HyperOS 2; falta Samsung)*
+- [x] Mini-panel de captura que guarda en Room.
+- [x] Un recordatorio exacto que suene con la app cerrada.
+      *(probado con pantalla bloqueada y app cerrada; falta probar tras reiniciar)*
 
 ### Fase 1 — MVP (10–14 semanas)
 - [ ] Elegir modo: **cuenta Google** o **perfil local con nombre**.
@@ -379,4 +381,5 @@ Reglas para no arrepentirse después:
 
 - [ ] ¿Idioma: solo español al inicio o español + inglés?
 - [ ] ¿Identidad visual: colores, logo, estilo de la burbuja?
-- [ ] ¿Qué teléfono(s) Android tienes para probar? (marca y versión)
+- [x] ¿Qué teléfono(s) Android tienes para probar? → **Xiaomi Redmi Note 13,
+      HyperOS 2 (Android 15)**.

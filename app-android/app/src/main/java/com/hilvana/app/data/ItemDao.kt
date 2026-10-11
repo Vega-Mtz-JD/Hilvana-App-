@@ -17,4 +17,11 @@ interface ItemDao {
     /** La Bandeja: lo capturado sin ordenar, lo más reciente primero. */
     @Query("SELECT * FROM items WHERE inInbox = 1 ORDER BY createdAt DESC")
     fun observeInbox(): Flow<List<Item>>
+
+    @Query("SELECT * FROM items WHERE id = :id")
+    suspend fun getById(id: Long): Item?
+
+    /** Recordatorios que aún no suenan (para reprogramarlos al reiniciar el teléfono). */
+    @Query("SELECT * FROM items WHERE dueAt IS NOT NULL AND dueAt > :now AND done = 0")
+    suspend fun getUpcomingReminders(now: Long): List<Item>
 }

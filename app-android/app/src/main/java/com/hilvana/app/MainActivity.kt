@@ -40,6 +40,7 @@ import androidx.core.content.ContextCompat
 import com.hilvana.app.bubble.BubbleService
 import com.hilvana.app.data.Item
 import com.hilvana.app.data.ItemType
+import com.hilvana.app.reminder.ReminderScheduler
 import com.hilvana.app.ui.theme.HilvanaTheme
 import java.text.DateFormat
 import java.util.Date
@@ -49,6 +50,7 @@ class MainActivity : ComponentActivity() {
     // Se vuelven a leer en onResume: el usuario puede regresar de Ajustes con el permiso dado.
     private var canDrawOverlays by mutableStateOf(false)
     private var canPostNotifications by mutableStateOf(false)
+    private var canScheduleExactAlarms by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,9 +68,11 @@ class MainActivity : ComponentActivity() {
                     BubbleSetupScreen(
                         canDrawOverlays = canDrawOverlays,
                         canPostNotifications = canPostNotifications,
+                        canScheduleExactAlarms = canScheduleExactAlarms,
                         bubbleRunning = bubbleRunning,
                         inbox = inbox,
                         onRequestOverlay = ::openOverlaySettings,
+                        onRequestExactAlarms = ::openExactAlarmSettings,
                         onRequestNotifications = {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                                 notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -90,6 +94,7 @@ class MainActivity : ComponentActivity() {
         canPostNotifications = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
             PackageManager.PERMISSION_GRANTED
+        canScheduleExactAlarms = ReminderScheduler.canScheduleExact(this)
     }
 
     /** Lleva directo al ajuste "Mostrar sobre otras apps" de Hilvana. */
@@ -98,15 +103,26 @@ class MainActivity : ComponentActivity() {
             Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
         )
     }
+
+    /** Lleva al ajuste "Alarmas y recordatorios" (solo existe en Android 12+). */
+    private fun openExactAlarmSettings() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            startActivity(
+                Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:$packageName"))
+            )
+        }
+    }
 }
 
 @Composable
 fun BubbleSetupScreen(
     canDrawOverlays: Boolean,
     canPostNotifications: Boolean,
+    canScheduleExactAlarms: Boolean,
     bubbleRunning: Boolean,
     inbox: List<Item>,
     onRequestOverlay: () -> Unit,
+    onRequestExactAlarms: () -> Unit,
     onRequestNotifications: () -> Unit,
     onToggleBubble: () -> Unit,
     modifier: Modifier = Modifier,
@@ -123,20 +139,34 @@ fun BubbleSetupScreen(
             style = MaterialTheme.typography.bodyLarge,
         )
 
-        PermissionCard(
-            title = "Mostrar sobre otras apps",
-            explanation = "Necesario para que la burbuja aparezca encima de WhatsApp, YouTube, etc.",
-            granted = canDrawOverlays,
-            buttonText = "Dar permiso",
-            onRequest = onRequestOverlay,
-        )
-        PermissionCard(
-            title = "Notificaciones",
-            explanation = "Para mostrar el aviso de la burbuja y, más adelante, tus recordatorios.",
-            granted = canPostNotifications,
-            buttonText = "Permitir",
-            onRequest = onRequestNotifications,
-        )
+        // Solo se muestran los permisos que faltan, para dejar espacio a la Bandeja.
+        if (!canDrawOverlays) {
+            PermissionCard(
+                title = "Mostrar sobre otras apps",
+                explanation = "Necesario para que la burbuja aparezca encima de WhatsApp, YouTube, etc.",
+                buttonText = "Dar permiso",
+                onRequest = onRequestOverlay,
+            )
+        }
+        if (!canPostNotifications) {
+            PermissionCard(
+                title = "Notificaciones",
+                explanation = "Para mostrar el aviso de la burbuja y tus recordatorios.",
+                buttonText = "Permitir",
+                onRequest = onRequestNotifications,
+            )
+        }
+        if (!canScheduleExactAlarms) {
+            PermissionCard(
+                title = "Alarmas y recordatorios",
+                explanation = "Para que tus recordatorios suenen a la hora exacta y no minutos después.",
+                buttonText = "Permitir",
+                onRequest = onRequestExactAlarms,
+            )
+        }
+        if (canDrawOverlays && canPostNotifications && canScheduleExactAlarms) {
+            Text("✅ Todos los permisos listos", style = MaterialTheme.typography.bodyMedium)
+        }
 
         Spacer(Modifier.height(8.dp))
         Button(
@@ -171,14 +201,17 @@ fun BubbleSetupScreen(
 
 @Composable
 private fun InboxRow(item: Item) {
-    val time = remember(item.createdAt) {
-        DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(item.createdAt))
+    val details = remember(item.createdAt, item.dueAt) {
+        val format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
+        val created = format.format(Date(item.createdAt))
+        val due = item.dueAt?.let { " · ⏰ ${format.format(Date(it))}" }.orEmpty()
+        "${item.type.label} · $created$due"
     }
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp)) {
             Text(item.text, style = MaterialTheme.typography.bodyLarge)
             Text(
-                "${item.type.label} · $time",
+                details,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -190,20 +223,14 @@ private fun InboxRow(item: Item) {
 private fun PermissionCard(
     title: String,
     explanation: String,
-    granted: Boolean,
     buttonText: String,
     onRequest: () -> Unit,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                (if (granted) "✅ " else "⚠️ ") + title,
-                style = MaterialTheme.typography.titleMedium,
-            )
+            Text("⚠️ $title", style = MaterialTheme.typography.titleMedium)
             Text(explanation, style = MaterialTheme.typography.bodyMedium)
-            if (!granted) {
-                OutlinedButton(onClick = onRequest) { Text(buttonText) }
-            }
+            OutlinedButton(onClick = onRequest) { Text(buttonText) }
         }
     }
 }
@@ -215,9 +242,18 @@ fun BubbleSetupScreenPreview() {
         BubbleSetupScreen(
             canDrawOverlays = false,
             canPostNotifications = true,
+            canScheduleExactAlarms = false,
             bubbleRunning = false,
-            inbox = listOf(Item(id = 1, text = "Llamar a mamá mañana a las 5", type = ItemType.REMINDER)),
+            inbox = listOf(
+                Item(
+                    id = 1,
+                    text = "Llamar a mamá",
+                    type = ItemType.REMINDER,
+                    dueAt = System.currentTimeMillis() + 3_600_000,
+                )
+            ),
             onRequestOverlay = {},
+            onRequestExactAlarms = {},
             onRequestNotifications = {},
             onToggleBubble = {},
         )
