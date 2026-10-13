@@ -43,6 +43,8 @@ fun SettingsScreen(
     onRequestExactAlarms: () -> Unit,
     onOpenAppSettings: () -> Unit,
     onToggleBubble: () -> Unit,
+    /** null si el teléfono no permite agregar el mosaico desde la app (Android < 13). */
+    onAddCaptureTile: (() -> Unit)?,
 ) {
     Scaffold(
         topBar = {
@@ -71,6 +73,27 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(if (bubbleRunning) "Ocultar burbuja" else "Mostrar burbuja")
+            }
+
+            Text("Otras formas de capturar", style = MaterialTheme.typography.titleMedium)
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Sin burbuja también puedes anotar rápido:", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "• Compartir → Hilvana desde cualquier app (textos y enlaces).\n" +
+                            "• Mantén presionado el ícono de Hilvana → Capturar.\n" +
+                            "• Mosaico \"Capturar\" en Ajustes rápidos (baja la barra de notificaciones).",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    if (onAddCaptureTile != null) {
+                        OutlinedButton(onClick = onAddCaptureTile) { Text("Agregar mosaico a Ajustes rápidos") }
+                    } else {
+                        Text(
+                            "Para el mosaico: baja la barra, toca el lápiz ✏️ y arrastra \"Capturar\".",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
             }
 
             Text("Permisos", style = MaterialTheme.typography.titleMedium)

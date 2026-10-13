@@ -66,6 +66,7 @@ fun HilvanaRoot(
     onRequestExactAlarms: () -> Unit,
     onOpenAppSettings: () -> Unit,
     onToggleBubble: () -> Unit,
+    onAddCaptureTile: (() -> Unit)?,
     viewModel: ItemsViewModel = viewModel(),
 ) {
     val items by viewModel.items.collectAsStateWithLifecycle()
@@ -89,6 +90,7 @@ fun HilvanaRoot(
             onRequestExactAlarms = onRequestExactAlarms,
             onOpenAppSettings = onOpenAppSettings,
             onToggleBubble = onToggleBubble,
+            onAddCaptureTile = onAddCaptureTile,
         )
         return
     }

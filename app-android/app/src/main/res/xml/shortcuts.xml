@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Accesos directos al mantener presionado el ícono de Hilvana -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_capture"
+        android:shortcutId="capture"
+        android:shortcutLongLabel="@string/shortcut_capture_long"
+        android:shortcutShortLabel="@string/shortcut_capture_short">
+        <intent
+            android:action="com.hilvana.app.CAPTURE"
+            android:targetClass="com.hilvana.app.capture.CaptureActivity"
+            android:targetPackage="com.hilvana.app" />
+    </shortcut>
+</shortcuts>

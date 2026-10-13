@@ -1,7 +1,13 @@
 package com.hilvana.app
 
 import android.Manifest
+import android.app.StatusBarManager
+import android.content.ComponentName
 import android.content.Intent
+import android.graphics.drawable.Icon
+import android.widget.Toast
+import androidx.annotation.RequiresApi
+import com.hilvana.app.capture.CaptureTileService
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -52,6 +58,11 @@ class MainActivity : ComponentActivity() {
                     onToggleBubble = {
                         if (bubbleRunning) BubbleService.stop(this) else BubbleService.start(this)
                     },
+                    onAddCaptureTile = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        ::requestAddCaptureTile
+                    } else {
+                        null
+                    },
                 )
             }
         }
@@ -87,6 +98,27 @@ class MainActivity : ComponentActivity() {
     /** Información de la app: batería, inicio automático (Xiaomi), etc. */
     private fun openAppDetails() {
         startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri()))
+    }
+
+    /** Android 13+: pide al sistema agregar el mosaico "Capturar" con un diálogo. */
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun requestAddCaptureTile() {
+        getSystemService(StatusBarManager::class.java).requestAddTileService(
+            ComponentName(this, CaptureTileService::class.java),
+            getString(R.string.capture_label),
+            Icon.createWithResource(this, R.drawable.ic_capture),
+            mainExecutor,
+        ) { result ->
+            val message = when (result) {
+                StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED,
+                StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED ->
+                    "El mosaico \"Capturar\" está en tus Ajustes rápidos"
+                StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_NOT_ADDED -> null
+                // Algunos fabricantes no lo permiten desde la app.
+                else -> "Agrégalo a mano: baja la barra, toca el lápiz ✏️ y arrastra \"Capturar\""
+            }
+            message?.let { Toast.makeText(this, it, Toast.LENGTH_LONG).show() }
+        }
     }
 
     private fun packageUri(): Uri = Uri.parse("package:$packageName")
