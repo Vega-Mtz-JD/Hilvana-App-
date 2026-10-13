@@ -17,9 +17,12 @@ import com.hilvana.app.data.Item
 import com.hilvana.app.ui.components.EmptyState
 import com.hilvana.app.ui.components.ItemCard
 import com.hilvana.app.ui.components.SectionHeader
-import com.hilvana.app.ui.isActionable
+import com.hilvana.app.data.ItemType
 
-/** Tareas y recordatorios: pendientes arriba (con fecha primero), completadas abajo. */
+/**
+ * Tareas: cosas por hacer sin importar cuándo (los recordatorios van al Calendario).
+ * Pendientes arriba (las que tienen fecha primero), completadas abajo.
+ */
 @Composable
 fun TasksScreen(
     items: List<Item>,
@@ -28,7 +31,7 @@ fun TasksScreen(
     modifier: Modifier = Modifier,
 ) {
     var showCompleted by rememberSaveable { mutableStateOf(false) }
-    val tasks = items.filter { it.type.isActionable }
+    val tasks = items.filter { it.type == ItemType.TASK }
     val pending = tasks.filter { !it.done }
         .sortedWith(compareBy(nullsLast()) { it.dueAt })
     val completed = tasks.filter { it.done }

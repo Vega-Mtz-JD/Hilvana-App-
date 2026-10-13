@@ -12,12 +12,17 @@ import java.time.temporal.TemporalAdjusters
  * Resultado de interpretar lo que escribió el usuario.
  * @param text el texto sin las palabras de fecha/hora ("Llamar a mamá").
  * @param dueAt la fecha/hora detectada, si había alguna.
- * @param type el tipo sugerido: Recordatorio si hay fecha, Idea si empieza con "idea:".
+ * @param type Recordatorio si se detectó fecha/hora; null si no.
+ * @param prefix lo escrito antes de ":" al inicio ("links: …" → "Links"), que puede
+ *   ser el nombre de una carpeta; quien llama decide si coincide con alguna.
+ * @param textAfterPrefix [text] sin ese prefijo.
  */
 data class ParseResult(
     val text: String,
     val dueAt: LocalDateTime?,
     val type: ItemType?,
+    val prefix: String? = null,
+    val textAfterPrefix: String = text,
 ) {
     fun dueAtMillis(zone: ZoneId = ZoneId.systemDefault()): Long? =
         dueAt?.atZone(zone)?.toInstant()?.toEpochMilli()
@@ -88,23 +93,26 @@ object SpanishDateParser {
     )
     private val DAY_SLASH_MONTH = Regex("$B(\\d{1,2})/(\\d{1,2})(?:/(\\d{2,4}))?$E")
     private val EL_DAY = Regex("${B}el\\s+(\\d{1,2})$E")
-    private val IDEA_PREFIX = Regex("^\\s*idea\\s*[:\\-]?\\s+", RegexOption.IGNORE_CASE)
+    private val URL = Regex("(?:https?://|www\\.)\\S+")
+
+    /** "links: …", "mis ideas: …" (letras y espacios, hasta 20, antes de ":"). */
+    private val PREFIX = Regex("^(\\p{L}[\\p{L} ]{0,19}?)\\s*:\\s+")
 
     fun parse(input: String, now: LocalDateTime = LocalDateTime.now()): ParseResult {
         val lower = input.lowercase()
         val taken = mutableListOf<IntRange>()
+        // Los enlaces nunca se interpretan: ".../video/12/10" no es una fecha.
+        val links = URL.findAll(lower).map { it.range }.toList()
 
-        /** Primera coincidencia que no se cruce con algo ya interpretado. */
+        /** Primera coincidencia que no se cruce con algo ya interpretado ni con un enlace. */
         fun Regex.findFree(): MatchResult? =
-            findAll(lower).firstOrNull { m -> taken.none { it.overlaps(m.range) } }
+            findAll(lower).firstOrNull { m -> (taken + links).none { it.overlaps(m.range) } }
                 ?.also { taken += it.range }
-
-        val typeHint = if (IDEA_PREFIX.containsMatchIn(input)) ItemType.IDEA else null
 
         // 1) "en 10 minutos", "dentro de 2 horas": se calcula desde ahora y listo.
         RELATIVE.findFree()?.let { m ->
             val dueAt = relative(now, m.groupValues[1], m.groupValues[2])
-            if (dueAt != null) return result(input, taken, dueAt, typeHint)
+            if (dueAt != null) return result(input, taken, dueAt)
             taken.remove(m.range)
         }
 
@@ -204,7 +212,7 @@ object SpanishDateParser {
         }
 
         if (date == null && hour == null && period == null) {
-            return result(input, taken, null, typeHint)
+            return result(input, taken, null)
         }
 
         // 5) Combinar. "a las 5" sin am/pm: de 1 a 7 se entiende de la tarde.
@@ -222,7 +230,7 @@ object SpanishDateParser {
         // Solo hora y ya pasó: se entiende mañana.
         if (date == null && !dueAt.isAfter(now)) dueAt = dueAt.plusDays(1)
 
-        return result(input, taken, dueAt, typeHint)
+        return result(input, taken, dueAt)
     }
 
     private fun relative(now: LocalDateTime, amountText: String, unit: String): LocalDateTime? {
@@ -246,26 +254,25 @@ object SpanishDateParser {
         return if (year == null && candidate.isBefore(today)) candidate.plusYears(1) else candidate
     }
 
-    private fun result(
-        input: String,
-        taken: List<IntRange>,
-        dueAt: LocalDateTime?,
-        typeHint: ItemType?,
-    ): ParseResult {
+    private fun result(input: String, taken: List<IntRange>, dueAt: LocalDateTime?): ParseResult {
         val builder = StringBuilder(input)
         taken.sortedByDescending { it.first }.forEach { builder.delete(it.first, it.last + 1) }
-        var text = builder.toString()
-        if (typeHint == ItemType.IDEA) text = text.replace(IDEA_PREFIX, "")
-        text = text
-            .replace(Regex("\\s+"), " ")
-            .trim(' ', ',', '.', ':', ';', '-')
-            .replaceFirstChar { it.uppercase() }
+        val text = tidy(builder.toString())
+        val prefixMatch = PREFIX.find(text)
         return ParseResult(
             text = text,
             dueAt = dueAt,
-            type = if (dueAt != null) ItemType.REMINDER else typeHint,
+            type = if (dueAt != null) ItemType.REMINDER else null,
+            prefix = prefixMatch?.groupValues?.get(1)?.trim(),
+            textAfterPrefix = prefixMatch?.let { tidy(text.substring(it.range.last + 1)) } ?: text,
         )
     }
+
+    private fun tidy(text: String): String = text
+        .replace(Regex("\\s+"), " ")
+        .trim(' ', ',', '.', ':', ';', '-')
+        // Mayúscula inicial, salvo que empiece con un enlace ("Https://" no abriría).
+        .let { if (URL.find(it)?.range?.first == 0) it else it.replaceFirstChar { c -> c.uppercase() } }
 
     private fun IntRange.overlaps(other: IntRange): Boolean =
         first <= other.last && other.first <= last

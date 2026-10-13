@@ -11,13 +11,17 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.hilvana.app.data.Folder
 import com.hilvana.app.data.Item
 import com.hilvana.app.ui.formatDue
 import com.hilvana.app.ui.isActionable
@@ -32,9 +36,12 @@ fun ItemCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     onToggleDone: (() -> Unit)? = null,
+    folder: Folder? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
     val showCheckbox = item.type.isActionable && onToggleDone != null
+    val link = remember(item.text) { LINK.find(item.text)?.value }
+    val uriHandler = LocalUriHandler.current
     Card(onClick = onClick, modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.padding(vertical = 8.dp),
@@ -64,17 +71,26 @@ fun ItemCard(
                 )
                 Text(
                     text = buildString {
-                        append(item.type.label)
+                        append(folder?.label ?: item.type.label)
                         item.dueAt?.let { append(" · ⏰ ").append(formatDue(it)) }
                     },
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            if (link != null) {
+                // Enlaces guardados (videos, artículos…): se abren con un toque.
+                TextButton(onClick = {
+                    val url = if (link.startsWith("www.")) "https://$link" else link
+                    runCatching { uriHandler.openUri(url) }
+                }) { Text("Abrir 🔗") }
+            }
             if (trailing != null) trailing() else Spacer(Modifier.width(16.dp))
         }
     }
 }
+
+private val LINK = Regex("(?:https?://|www\\.)\\S+")
 
 @Composable
 fun SectionHeader(text: String, modifier: Modifier = Modifier) {

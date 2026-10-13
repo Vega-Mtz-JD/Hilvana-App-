@@ -11,7 +11,9 @@ import com.hilvana.app.data.ItemRepository
  */
 class HilvanaApp : Application() {
     val database: HilvanaDatabase by lazy { HilvanaDatabase.create(this) }
-    val repository: ItemRepository by lazy { ItemRepository(this, database.itemDao()) }
+    val repository: ItemRepository by lazy {
+        ItemRepository(this, database.itemDao(), database.folderDao())
+    }
 }
 
 val Context.database: HilvanaDatabase

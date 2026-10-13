@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import com.hilvana.app.data.Folder
 import com.hilvana.app.data.Item
 import com.hilvana.app.data.ItemType
 import com.hilvana.app.reminder.QuickTime
@@ -50,12 +51,13 @@ import java.util.TimeZone
 
 /**
  * Editor de un elemento (nuevo o existente): texto, tipo, fecha/hora, hecho y borrar.
- * Al pasar a Nota/Idea se quita la fecha (en el plan, esos tipos no la tienen).
+ * Al pasar a Nota se quita la fecha (las notas no la tienen) y se puede elegir carpeta.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ItemEditorSheet(
     item: Item,
+    folders: List<Folder>,
     onDismiss: () -> Unit,
     onSave: (Item) -> Unit,
     onDelete: (Item) -> Unit,
@@ -65,6 +67,7 @@ fun ItemEditorSheet(
     var type by rememberSaveable { mutableStateOf(item.type) }
     var dueAt by rememberSaveable { mutableStateOf(item.dueAt) }
     var done by rememberSaveable { mutableStateOf(item.done) }
+    var folderId by rememberSaveable { mutableStateOf(item.folderId) }
     var showDatePicker by remember { mutableStateOf(false) }
     // Fecha elegida en el calendario, esperando que se elija la hora.
     var pickedDateUtc by remember { mutableStateOf<Long?>(null) }
@@ -103,6 +106,27 @@ fun ItemEditorSheet(
                         onClick = { type = option },
                         label = { Text(option.label) },
                     )
+                }
+            }
+
+            if (type == ItemType.NOTE && folders.isNotEmpty()) {
+                Text("Carpeta", style = MaterialTheme.typography.labelLarge)
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    FilterChip(
+                        selected = folderId == null,
+                        onClick = { folderId = null },
+                        label = { Text("Sin carpeta") },
+                    )
+                    folders.forEach { folder ->
+                        FilterChip(
+                            selected = folderId == folder.id,
+                            onClick = { folderId = folder.id },
+                            label = { Text(folder.label) },
+                        )
+                    }
                 }
             }
 
@@ -157,6 +181,7 @@ fun ItemEditorSheet(
                                 type = type,
                                 dueAt = if (canHaveDate) dueAt else null,
                                 done = canHaveDate && done,
+                                folderId = if (type == ItemType.NOTE) folderId else null,
                             )
                         )
                     },

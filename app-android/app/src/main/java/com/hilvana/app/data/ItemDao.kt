@@ -22,6 +22,10 @@ interface ItemDao {
     @Query("SELECT * FROM items ORDER BY createdAt DESC")
     fun observeAll(): Flow<List<Item>>
 
+    /** Al borrar una carpeta sus notas no se pierden: quedan sin carpeta. */
+    @Query("UPDATE items SET folderId = NULL WHERE folderId = :folderId")
+    suspend fun clearFolder(folderId: Long)
+
     @Query("SELECT * FROM items WHERE id = :id")
     suspend fun getById(id: Long): Item?
 

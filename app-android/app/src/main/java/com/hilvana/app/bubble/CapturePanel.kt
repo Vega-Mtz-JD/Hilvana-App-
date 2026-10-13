@@ -5,7 +5,10 @@ import android.graphics.PixelFormat
 import android.view.KeyEvent
 import android.view.WindowManager
 import android.widget.FrameLayout
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.ComposeView
+import com.hilvana.app.repository
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.hilvana.app.capture.CaptureContent
@@ -20,7 +23,7 @@ import com.hilvana.app.ui.theme.HilvanaTheme
 class CapturePanel(
     private val context: Context,
     private val windowManager: WindowManager,
-    private val onSave: (text: String, type: ItemType, dueAt: Long?) -> Unit,
+    private val onSave: (text: String, type: ItemType, dueAt: Long?, folderId: Long?) -> Unit,
     private val onClosed: () -> Unit,
 ) {
     private var root: FrameLayout? = null
@@ -35,9 +38,11 @@ class CapturePanel(
         val composeView = ComposeView(context).apply {
             setContent {
                 HilvanaTheme {
+                    val folders by context.repository.folders.collectAsState(initial = emptyList())
                     CaptureContent(
-                        onSave = { text, type, dueAt ->
-                            onSave(text, type, dueAt)
+                        folders = folders,
+                        onSave = { text, type, dueAt, folderId ->
+                            onSave(text, type, dueAt, folderId)
                             dismiss()
                         },
                         onDismiss = ::dismiss,

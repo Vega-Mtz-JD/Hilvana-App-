@@ -3,11 +3,14 @@ package com.hilvana.app.data
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-/** El tipo solo cambia cómo se muestra un elemento; se puede convertir con un toque. */
+/**
+ * - Nota: guardar algo para no olvidarlo (se organiza en carpetas).
+ * - Tarea: algo que hay que hacer, sin importar cuándo.
+ * - Recordatorio: algo que hay que hacer en un día y hora concretos (suena).
+ */
 enum class ItemType(val label: String) {
     NOTE("Nota"),
     TASK("Tarea"),
-    IDEA("Idea"),
     REMINDER("Recordatorio"),
 }
 
@@ -25,4 +28,6 @@ data class Item(
     /** Fecha/hora del recordatorio en milisegundos, si la tiene. */
     val dueAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
+    /** Carpeta de la nota (solo para Notas); null = sin carpeta. */
+    val folderId: Long? = null,
 )

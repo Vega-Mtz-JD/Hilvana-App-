@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.hilvana.app.data.Folder
 import com.hilvana.app.data.ItemType
 import com.hilvana.app.parser.SpanishDateParser
 import com.hilvana.app.reminder.QuickTime
@@ -50,24 +51,32 @@ import com.hilvana.app.ui.formatDue
  */
 @Composable
 fun CaptureContent(
-    onSave: (text: String, type: ItemType, dueAt: Long?) -> Unit,
+    folders: List<Folder>,
+    onSave: (text: String, type: ItemType, dueAt: Long?, folderId: Long?) -> Unit,
     onDismiss: () -> Unit,
     initialText: String = "",
 ) {
     var text by rememberSaveable { mutableStateOf(initialText) }
     var selectedType by remember { mutableStateOf<ItemType?>(null) }
+    var selectedFolderId by remember { mutableStateOf<Long?>(null) }
     var quickTime by remember { mutableStateOf<QuickTime?>(null) }
     var ignoreDetection by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
 
-    // Captura inteligente: "mañana a las 5 llamar a mamá" → Recordatorio mañana 17:00.
+    // Captura inteligente: "mañana a las 5 llamar a mamá" → Recordatorio mañana 17:00,
+    // y "links: https://…" → Nota en la carpeta Links (si existe).
     val parsed = remember(text) { SpanishDateParser.parse(text) }
-    val detected = parsed.takeIf { !ignoreDetection && it.type != null }
+    val prefixFolder = if (ignoreDetection) null else parsed.prefix?.let { p -> folders.firstOrNull { it.matches(p) } }
+    val detected = parsed.takeIf { !ignoreDetection && (it.type != null || prefixFolder != null) }
     val detectedDue = detected?.dueAtMillis()
     // Lo que el usuario elige a mano siempre gana sobre lo detectado.
-    val effectiveType = selectedType ?: detected?.type
+    val effectiveType = selectedType ?: detected?.type ?: if (prefixFolder != null) ItemType.NOTE else null
     val isReminder = effectiveType == ItemType.REMINDER
-    val usesDetection = detected != null && quickTime == null &&
+    val isNote = (effectiveType ?: ItemType.NOTE) == ItemType.NOTE
+    val effectiveFolder = if (!isNote) null
+    else selectedFolderId?.let { id -> folders.firstOrNull { it.id == id } } ?: prefixFolder
+    val usesPrefix = isNote && prefixFolder != null && effectiveFolder == prefixFolder
+    val usesDetection = detected?.type != null && quickTime == null &&
         (selectedType == null || selectedType == detected.type)
 
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
@@ -122,8 +131,15 @@ fun CaptureContent(
                             Text(
                                 text = buildString {
                                     append("✨ ")
-                                    append(detectedDue?.let { "⏰ " + formatDue(it) } ?: detected.type?.label)
-                                    if (detected.text.isNotBlank()) append(" · ").append(detected.text)
+                                    if (detectedDue != null) {
+                                        append("⏰ ").append(formatDue(detectedDue))
+                                        if (detected.text.isNotBlank()) append(" · ").append(detected.text)
+                                    } else if (prefixFolder != null) {
+                                        append(prefixFolder.label)
+                                        if (detected.textAfterPrefix.isNotBlank()) {
+                                            append(" · ").append(detected.textAfterPrefix)
+                                        }
+                                    }
                                 },
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
@@ -146,6 +162,24 @@ fun CaptureContent(
                             onClick = { selectedType = if (selectedType == type) null else type },
                             label = { Text(type.label) },
                         )
+                    }
+                }
+
+                // Carpeta (solo notas). Sin elegir, la nota queda sin carpeta.
+                if (isNote && folders.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        folders.forEach { folder ->
+                            FilterChip(
+                                selected = effectiveFolder?.id == folder.id,
+                                onClick = {
+                                    selectedFolderId = if (effectiveFolder?.id == folder.id) null else folder.id
+                                },
+                                label = { Text(folder.label) },
+                            )
+                        }
                     }
                 }
 
@@ -173,12 +207,12 @@ fun CaptureContent(
                     Button(
                         onClick = {
                             val dueAt = if (isReminder) quickTime?.toMillis() ?: detectedDue else null
-                            val finalText = if (usesDetection) {
-                                parsed.text.ifBlank { text.trim() }
-                            } else {
-                                text.trim()
-                            }
-                            onSave(finalText, effectiveType ?: ItemType.NOTE, dueAt)
+                            val finalText = when {
+                                usesPrefix -> parsed.textAfterPrefix
+                                usesDetection -> parsed.text
+                                else -> text.trim()
+                            }.ifBlank { text.trim() }
+                            onSave(finalText, effectiveType ?: ItemType.NOTE, dueAt, effectiveFolder?.id)
                         },
                         // Un recordatorio necesita hora.
                         enabled = text.isNotBlank() &&

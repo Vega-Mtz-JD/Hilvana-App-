@@ -9,9 +9,22 @@ import kotlinx.coroutines.flow.Flow
  * sincronizadas: si un recordatorio se borra, se completa o cambia de hora,
  * su alarma se cancela o se reprograma aquí.
  */
-class ItemRepository(private val context: Context, private val dao: ItemDao) {
+class ItemRepository(
+    private val context: Context,
+    private val dao: ItemDao,
+    private val folderDao: FolderDao,
+) {
 
     val items: Flow<List<Item>> = dao.observeAll()
+    val folders: Flow<List<Folder>> = folderDao.observeAll()
+
+    suspend fun saveFolder(folder: Folder): Long =
+        if (folder.id == 0L) folderDao.insert(folder) else folder.id.also { folderDao.update(folder) }
+
+    suspend fun deleteFolder(folder: Folder) {
+        dao.clearFolder(folder.id)
+        folderDao.delete(folder)
+    }
 
     /** Inserta (id = 0) o actualiza el elemento. Devuelve su id. */
     suspend fun save(item: Item): Long {

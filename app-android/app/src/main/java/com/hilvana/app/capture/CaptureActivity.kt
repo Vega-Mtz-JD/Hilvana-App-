@@ -5,7 +5,10 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import com.hilvana.app.repository
 import com.hilvana.app.ui.theme.HilvanaTheme
 import kotlinx.coroutines.launch
 
@@ -21,11 +24,13 @@ class CaptureActivity : ComponentActivity() {
 
         setContent {
             HilvanaTheme {
+                val folders by repository.folders.collectAsStateWithLifecycle(initialValue = emptyList())
                 CaptureContent(
+                    folders = folders,
                     initialText = sharedText,
-                    onSave = { text, type, dueAt ->
+                    onSave = { text, type, dueAt, folderId ->
                         lifecycleScope.launch {
-                            saveCapture(this@CaptureActivity, text, type, dueAt)
+                            saveCapture(this@CaptureActivity, text, type, dueAt, folderId)
                             finish()
                         }
                     },

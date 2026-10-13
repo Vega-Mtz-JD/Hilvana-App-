@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -41,7 +42,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hilvana.app.data.Item
 import com.hilvana.app.data.ItemType
+import com.hilvana.app.ui.screens.CalendarScreen
 import com.hilvana.app.ui.screens.InboxScreen
+import java.time.LocalDate
+import java.time.ZoneId
 import com.hilvana.app.ui.screens.NotesScreen
 import com.hilvana.app.ui.screens.PermissionsState
 import com.hilvana.app.ui.screens.SettingsScreen
@@ -49,10 +53,19 @@ import com.hilvana.app.ui.screens.TasksScreen
 import com.hilvana.app.ui.screens.TodayScreen
 
 private enum class Tab(val label: String, val icon: ImageVector, val newItemType: ItemType) {
-    TODAY("Hoy", Icons.Filled.DateRange, ItemType.TASK),
+    TODAY("Hoy", Icons.Filled.Home, ItemType.TASK),
     INBOX("Bandeja", Icons.Filled.Email, ItemType.NOTE),
     NOTES("Notas", Icons.Filled.Edit, ItemType.NOTE),
     TASKS("Tareas", Icons.Filled.CheckCircle, ItemType.TASK),
+    CALENDAR("Calendario", Icons.Filled.DateRange, ItemType.REMINDER),
+}
+
+/** Nuevo recordatorio desde el calendario: ese día a las 9:00 (o en 1 hora si ya pasó). */
+private fun reminderTimeFor(date: LocalDate): Long {
+    val zone = ZoneId.systemDefault()
+    val atNine = date.atTime(9, 0).atZone(zone).toInstant().toEpochMilli()
+    val now = System.currentTimeMillis()
+    return if (atNine > now) atNine else now + 60 * 60_000L
 }
 
 /** Pantalla raíz: barra superior, navegación inferior, botón + y editor. */
@@ -70,14 +83,22 @@ fun HilvanaRoot(
     viewModel: ItemsViewModel = viewModel(),
 ) {
     val items by viewModel.items.collectAsStateWithLifecycle()
+    val folders by viewModel.folders.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableStateOf(Tab.TODAY) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
+    var openFolderId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var selectedDate by rememberSaveable { mutableStateOf(LocalDate.now()) }
     var editing by remember { mutableStateOf<Item?>(null) }
     val inboxCount = items.count { it.inInbox }
+    val folderOpen = tab == Tab.NOTES && openFolderId != null
 
-    // "Atrás": cierra Ajustes o regresa a Hoy antes de salir de la app.
-    BackHandler(enabled = showSettings || tab != Tab.TODAY) {
-        if (showSettings) showSettings = false else tab = Tab.TODAY
+    // "Atrás": cierra Ajustes, luego la carpeta abierta, luego regresa a Hoy antes de salir.
+    BackHandler(enabled = showSettings || folderOpen || tab != Tab.TODAY) {
+        when {
+            showSettings -> showSettings = false
+            folderOpen -> openFolderId = null
+            else -> tab = Tab.TODAY
+        }
     }
 
     if (showSettings) {
@@ -135,7 +156,13 @@ fun HilvanaRoot(
         floatingActionButton = {
             FloatingActionButton(onClick = {
                 // Lo creado desde la app ya está ordenado: no pasa por la Bandeja.
-                editing = Item(text = "", type = tab.newItemType, inInbox = false)
+                editing = Item(
+                    text = "",
+                    type = tab.newItemType,
+                    inInbox = false,
+                    folderId = if (tab == Tab.NOTES) openFolderId else null,
+                    dueAt = if (tab == Tab.CALENDAR) reminderTimeFor(selectedDate) else null,
+                )
             }) {
                 Icon(Icons.Filled.Add, contentDescription = "Nuevo")
             }
@@ -163,9 +190,26 @@ fun HilvanaRoot(
                 onReviewed = viewModel::markReviewed,
                 modifier = contentModifier,
             )
-            Tab.NOTES -> NotesScreen(items = items, onOpen = open, modifier = contentModifier)
+            Tab.NOTES -> NotesScreen(
+                items = items,
+                folders = folders,
+                openFolderId = openFolderId,
+                onOpenFolder = { openFolderId = it },
+                onOpen = open,
+                onSaveFolder = viewModel::saveFolder,
+                onDeleteFolder = viewModel::deleteFolder,
+                modifier = contentModifier,
+            )
             Tab.TASKS -> TasksScreen(
                 items = items,
+                onOpen = open,
+                onToggleDone = viewModel::toggleDone,
+                modifier = contentModifier,
+            )
+            Tab.CALENDAR -> CalendarScreen(
+                items = items,
+                selectedDate = selectedDate,
+                onSelectDate = { selectedDate = it },
                 onOpen = open,
                 onToggleDone = viewModel::toggleDone,
                 modifier = contentModifier,
@@ -176,6 +220,7 @@ fun HilvanaRoot(
     editing?.let { item ->
         ItemEditorSheet(
             item = item,
+            folders = folders,
             onDismiss = { editing = null },
             onSave = {
                 viewModel.save(it)

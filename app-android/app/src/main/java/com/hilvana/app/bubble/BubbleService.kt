@@ -177,8 +177,8 @@ class BubbleService : Service() {
         capturePanel.show()
     }
 
-    private fun onCaptured(text: String, type: ItemType, dueAt: Long?) {
-        scope.launch { saveCapture(this@BubbleService, text, type, dueAt) }
+    private fun onCaptured(text: String, type: ItemType, dueAt: Long?, folderId: Long?) {
+        scope.launch { saveCapture(this@BubbleService, text, type, dueAt, folderId) }
     }
 
     private inner class BubbleTouchListener : View.OnTouchListener {

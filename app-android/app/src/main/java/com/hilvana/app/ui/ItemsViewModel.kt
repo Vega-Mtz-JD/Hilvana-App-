@@ -3,6 +3,7 @@ package com.hilvana.app.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.hilvana.app.data.Folder
 import com.hilvana.app.data.Item
 import com.hilvana.app.repository
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,6 +18,17 @@ class ItemsViewModel(application: Application) : AndroidViewModel(application) {
 
     val items: StateFlow<List<Item>> = repository.items
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val folders: StateFlow<List<Folder>> = repository.folders
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun saveFolder(folder: Folder) {
+        viewModelScope.launch { repository.saveFolder(folder) }
+    }
+
+    fun deleteFolder(folder: Folder) {
+        viewModelScope.launch { repository.deleteFolder(folder) }
+    }
 
     fun save(item: Item) {
         viewModelScope.launch { repository.save(item) }

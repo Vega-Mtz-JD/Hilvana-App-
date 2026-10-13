@@ -48,10 +48,31 @@ class SpanishDateParserTest {
         assertEquals(ItemType.REMINDER, SpanishDateParser.parse("mañana pagar renta", now).type)
     }
 
-    @Test fun ideaConPrefijo() {
-        val result = SpanishDateParser.parse("idea: app de recetas", now)
-        assertEquals("App de recetas", result.text)
-        assertEquals(ItemType.IDEA, result.type)
+    @Test fun prefijoDeCarpeta() {
+        val result = SpanishDateParser.parse("ideas: app de recetas", now)
+        assertEquals("Ideas", result.prefix)
+        assertEquals("App de recetas", result.textAfterPrefix)
+        assertNull(result.type)
         assertNull(result.dueAt)
     }
+
+    @Test fun prefijoConFecha() {
+        val result = SpanishDateParser.parse("compras: mañana leche", now)
+        assertEquals("Compras", result.prefix)
+        assertEquals("Leche", result.textAfterPrefix)
+        assertEquals(at(10, 13, 9), result.dueAt)
+    }
+
+    @Test fun sinPrefijo() {
+        assertNull(SpanishDateParser.parse("comprar pan", now).prefix)
+    }
+
+    @Test fun enlaceConPrefijo() {
+        val result = SpanishDateParser.parse("links: https://youtu.be/abc123", now)
+        assertEquals("Links", result.prefix)
+        assertEquals("https://youtu.be/abc123", result.textAfterPrefix)
+    }
+
+    @Test fun losEnlacesNoSonFechas() =
+        check("video https://tiktok.com/@ana/video/12/10", "Video https://tiktok.com/@ana/video/12/10", null)
 }
