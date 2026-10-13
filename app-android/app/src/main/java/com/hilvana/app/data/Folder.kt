@@ -1,5 +1,6 @@
 package com.hilvana.app.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Entity
@@ -17,8 +18,10 @@ data class Folder(
     val name: String,
     val emoji: String = DEFAULT_EMOJI,
     val createdAt: Long = System.currentTimeMillis(),
+    /** Protegida: sus notas se ocultan hasta desbloquear con huella o PIN. */
+    @ColumnInfo(defaultValue = "0") val locked: Boolean = false,
 ) {
-    val label: String get() = "$emoji $name"
+    val label: String get() = "$emoji $name" + if (locked) " 🔒" else ""
 
     /** "¿Esta carpeta se llama así?" sin importar mayúsculas ni acentos. */
     fun matches(name: String): Boolean = normalize(this.name) == normalize(name)

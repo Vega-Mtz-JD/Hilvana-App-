@@ -16,8 +16,14 @@ class UserPrefs(context: Context) {
         get() = prefs.getString(KEY_USER_NAME, "").orEmpty()
         set(value) = prefs.edit { putString(KEY_USER_NAME, value.trim()) }
 
+    /** Pedir huella/PIN al abrir la app. */
+    var appLockEnabled: Boolean
+        get() = prefs.getBoolean(KEY_APP_LOCK, false)
+        set(value) = prefs.edit { putBoolean(KEY_APP_LOCK, value) }
+
     private companion object {
         const val KEY_ONBOARDING_DONE = "onboarding_done"
         const val KEY_USER_NAME = "user_name"
+        const val KEY_APP_LOCK = "app_lock"
     }
 }

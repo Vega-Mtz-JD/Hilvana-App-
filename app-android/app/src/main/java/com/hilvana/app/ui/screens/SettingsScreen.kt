@@ -16,6 +16,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Switch
+import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.Alignment
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -46,6 +49,9 @@ fun SettingsScreen(
     /** null si el teléfono no permite agregar el mosaico desde la app (Android < 13). */
     onAddCaptureTile: (() -> Unit)?,
     onShowWelcome: () -> Unit,
+    appLockEnabled: Boolean,
+    canUseAppLock: Boolean,
+    onSetAppLock: (Boolean) -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -74,6 +80,38 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(if (bubbleRunning) "Ocultar burbuja" else "Mostrar burbuja")
+            }
+
+            Text("Privacidad", style = MaterialTheme.typography.titleMedium)
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("🔒 Bloquear Hilvana al abrir", style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                "Con tu huella o el PIN de tu teléfono. Se vuelve a bloquear tras 1 minuto " +
+                                    "fuera de la app. Capturar desde la burbuja no lo pide.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(
+                            checked = appLockEnabled,
+                            onCheckedChange = onSetAppLock,
+                            enabled = canUseAppLock || appLockEnabled,
+                        )
+                    }
+                    Text(
+                        if (canUseAppLock) {
+                            "También puedes proteger solo una carpeta (p. ej. 🔑 Claves): ábrela, toca ✏️ y " +
+                                "activa \"Proteger con huella o PIN\"."
+                        } else {
+                            "⚠️ Tu teléfono no tiene bloqueo de pantalla. Configúralo en Ajustes del teléfono " +
+                                "para usar esta opción."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
 
             Text("Otras formas de capturar", style = MaterialTheme.typography.titleMedium)

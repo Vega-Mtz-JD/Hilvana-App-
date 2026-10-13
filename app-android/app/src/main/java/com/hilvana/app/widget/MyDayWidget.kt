@@ -41,6 +41,7 @@ import com.hilvana.app.MainActivity
 import com.hilvana.app.capture.CaptureActivity
 import com.hilvana.app.data.Item
 import com.hilvana.app.data.ItemType
+import com.hilvana.app.data.UserPrefs
 import com.hilvana.app.database
 import com.hilvana.app.repository
 import com.hilvana.app.ui.addDays
@@ -58,9 +59,11 @@ class MyDayWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val items = context.repository.items
+        // Con la app bloqueada, la pantalla de inicio no muestra el texto: solo cuántos hay.
+        val hideText = UserPrefs(context).appLockEnabled
         provideContent {
             val all by items.collectAsState(initial = emptyList())
-            GlanceTheme { MyDayContent(myDayItems(all)) }
+            GlanceTheme { MyDayContent(myDayItems(all), hideText) }
         }
     }
 }
@@ -75,7 +78,7 @@ private fun myDayItems(items: List<Item>, now: Long = System.currentTimeMillis()
 }
 
 @Composable
-private fun MyDayContent(items: List<Item>) {
+private fun MyDayContent(items: List<Item>, hideText: Boolean) {
     val context = LocalContext.current
     val today = LocalDate.now().format(DateTimeFormatter.ofPattern("EEE d MMM", Locale.forLanguageTag("es")))
 
@@ -116,7 +119,19 @@ private fun MyDayContent(items: List<Item>) {
         }
         Spacer(GlanceModifier.height(8.dp))
 
-        if (items.isEmpty()) {
+        if (hideText && items.isNotEmpty()) {
+            Box(
+                modifier = GlanceModifier
+                    .fillMaxSize()
+                    .clickable(actionStartActivity<MainActivity>()),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    "🔒 " + if (items.size == 1) "1 pendiente" else "${items.size} pendientes",
+                    style = TextStyle(fontSize = 15.sp, color = GlanceTheme.colors.onSurfaceVariant),
+                )
+            }
+        } else if (items.isEmpty()) {
             Box(
                 modifier = GlanceModifier
                     .fillMaxSize()

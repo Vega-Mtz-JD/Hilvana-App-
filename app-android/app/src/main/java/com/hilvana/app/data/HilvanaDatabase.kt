@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [Item::class, Folder::class], version = 3, exportSchema = false)
+@Database(entities = [Item::class, Folder::class], version = 4, exportSchema = false)
 abstract class HilvanaDatabase : RoomDatabase() {
     abstract fun itemDao(): ItemDao
     abstract fun folderDao(): FolderDao
@@ -15,7 +15,7 @@ abstract class HilvanaDatabase : RoomDatabase() {
     companion object {
         fun create(context: Context): HilvanaDatabase =
             Room.databaseBuilder(context, HilvanaDatabase::class.java, "hilvana.db")
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .addCallback(SeedFolders)
                 .build()
 
@@ -50,6 +50,13 @@ abstract class HilvanaDatabase : RoomDatabase() {
         private val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE items ADD COLUMN imagePath TEXT")
+            }
+        }
+
+        /** v3 → v4: carpetas protegidas con huella/PIN. */
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE folders ADD COLUMN locked INTEGER NOT NULL DEFAULT 0")
             }
         }
 

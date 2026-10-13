@@ -30,6 +30,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -82,16 +83,30 @@ fun HilvanaRoot(
     onToggleBubble: () -> Unit,
     onAddCaptureTile: (() -> Unit)?,
     onShowWelcome: () -> Unit,
+    unlocked: Boolean,
+    onRequestUnlock: (title: String, onSuccess: () -> Unit) -> Unit,
+    appLockEnabled: Boolean,
+    canUseAppLock: Boolean,
+    onSetAppLock: (Boolean) -> Unit,
     viewModel: ItemsViewModel = viewModel(),
 ) {
-    val items by viewModel.items.collectAsStateWithLifecycle()
+    val allItems by viewModel.items.collectAsStateWithLifecycle()
     val folders by viewModel.folders.collectAsStateWithLifecycle()
+    // Mientras no se desbloquee, las notas de carpetas protegidas no se muestran en ningún lado.
+    val lockedFolderIds = folders.filter { it.locked }.map { it.id }.toSet()
+    val items = if (unlocked || lockedFolderIds.isEmpty()) allItems
+    else allItems.filter { it.folderId == null || it.folderId !in lockedFolderIds }
     var tab by rememberSaveable { mutableStateOf(Tab.TODAY) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
     var openFolderId by rememberSaveable { mutableStateOf<Long?>(null) }
     var selectedDate by rememberSaveable { mutableStateOf(LocalDate.now()) }
     var editing by remember { mutableStateOf<Item?>(null) }
     val inboxCount = items.count { it.inInbox }
+
+    // Si se vuelve a bloquear con una carpeta protegida abierta, se cierra.
+    LaunchedEffect(unlocked, openFolderId, lockedFolderIds) {
+        if (!unlocked && openFolderId in lockedFolderIds) openFolderId = null
+    }
     val folderOpen = tab == Tab.NOTES && openFolderId != null
 
     // "Atrás": cierra Ajustes, luego la carpeta abierta, luego regresa a Hoy antes de salir.
@@ -115,6 +130,9 @@ fun HilvanaRoot(
             onToggleBubble = onToggleBubble,
             onAddCaptureTile = onAddCaptureTile,
             onShowWelcome = onShowWelcome,
+            appLockEnabled = appLockEnabled,
+            canUseAppLock = canUseAppLock,
+            onSetAppLock = onSetAppLock,
         )
         return
     }
@@ -205,7 +223,16 @@ fun HilvanaRoot(
                 items = items,
                 folders = folders,
                 openFolderId = openFolderId,
-                onOpenFolder = { openFolderId = it },
+                onOpenFolder = { id ->
+                    val folder = folders.firstOrNull { it.id == id }
+                    if (folder?.locked == true) {
+                        onRequestUnlock("Abrir ${folder.name}") { openFolderId = id }
+                    } else {
+                        openFolderId = id
+                    }
+                },
+                unlocked = unlocked,
+                canLockFolders = canUseAppLock,
                 onOpen = open,
                 onSaveFolder = viewModel::saveFolder,
                 onDeleteFolder = viewModel::deleteFolder,

@@ -13,6 +13,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
+import androidx.compose.ui.Alignment
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -47,6 +49,8 @@ private val EMOJIS = listOf(
 fun FolderDialog(
     folder: Folder,
     existingNames: List<String>,
+    /** false si el teléfono no tiene bloqueo de pantalla (no se podría desbloquear). */
+    canLock: Boolean,
     onDismiss: () -> Unit,
     onSave: (Folder) -> Unit,
     onDelete: (Folder) -> Unit,
@@ -54,6 +58,7 @@ fun FolderDialog(
     val isNew = folder.id == 0L
     var name by rememberSaveable { mutableStateOf(folder.name) }
     var emoji by rememberSaveable { mutableStateOf(folder.emoji) }
+    var locked by rememberSaveable { mutableStateOf(folder.locked) }
     var confirmDelete by remember { mutableStateOf(false) }
 
     val trimmed = name.trim()
@@ -78,6 +83,8 @@ fun FolderDialog(
                                     onClick = {
                                         name = suggestedName
                                         emoji = suggestedEmoji
+                                        // Las claves se protegen por defecto.
+                                        if (suggestedName == "Claves" && canLock) locked = true
                                     },
                                     label = { Text("$suggestedEmoji $suggestedName") },
                                 )
@@ -114,6 +121,27 @@ fun FolderDialog(
                     }
                 }
 
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("🔒 Proteger con huella o PIN", style = MaterialTheme.typography.labelLarge)
+                        Text(
+                            if (canLock) {
+                                "Sus notas se ocultan hasta que desbloquees."
+                            } else {
+                                "Configura un bloqueo de pantalla en tu teléfono para usarlo."
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = locked,
+                        onCheckedChange = { locked = it },
+                        // Se puede quitar siempre; activarlo solo si hay con qué desbloquear.
+                        enabled = canLock || locked,
+                    )
+                }
+
                 if (!isNew) {
                     if (!confirmDelete) {
                         TextButton(
@@ -142,7 +170,7 @@ fun FolderDialog(
         },
         confirmButton = {
             TextButton(
-                onClick = { onSave(folder.copy(name = trimmed, emoji = emoji)) },
+                onClick = { onSave(folder.copy(name = trimmed, emoji = emoji, locked = locked)) },
                 enabled = canSave,
             ) { Text(if (isNew) "Crear" else "Guardar") }
         },

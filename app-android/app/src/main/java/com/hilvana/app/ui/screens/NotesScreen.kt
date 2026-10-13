@@ -53,6 +53,9 @@ fun NotesScreen(
     onOpen: (Item) -> Unit,
     onSaveFolder: (Folder) -> Unit,
     onDeleteFolder: (Folder) -> Unit,
+    /** false: las carpetas protegidas muestran 🔒 en lugar de cuántas notas tienen. */
+    unlocked: Boolean,
+    canLockFolders: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val notes = items.filter { it.type == ItemType.NOTE }
@@ -82,6 +85,7 @@ fun NotesScreen(
                                 FolderTile(
                                     folder = folder,
                                     count = notes.count { it.folderId == folder.id },
+                                    hidden = folder.locked && !unlocked,
                                     onClick = { onOpenFolder(folder.id) },
                                     modifier = Modifier.weight(1f),
                                 )
@@ -140,6 +144,7 @@ fun NotesScreen(
         FolderDialog(
             folder = folder,
             existingNames = folders.filter { it.id != folder.id }.map { it.name },
+            canLock = canLockFolders,
             onDismiss = { editingFolder = null },
             onSave = {
                 onSaveFolder(it)
@@ -155,7 +160,13 @@ fun NotesScreen(
 }
 
 @Composable
-private fun FolderTile(folder: Folder, count: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun FolderTile(
+    folder: Folder,
+    count: Int,
+    hidden: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Card(
         onClick = onClick,
         modifier = modifier,
@@ -176,7 +187,11 @@ private fun FolderTile(folder: Folder, count: Int, onClick: () -> Unit, modifier
                 textAlign = TextAlign.Center,
             )
             Text(
-                if (count == 1) "1 nota" else "$count notas",
+                when {
+                    hidden -> "🔒 Protegida"
+                    count == 1 -> "1 nota"
+                    else -> "$count notas"
+                },
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

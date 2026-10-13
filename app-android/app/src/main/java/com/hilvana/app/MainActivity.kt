@@ -9,9 +9,15 @@ import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.provider.Settings
 import android.widget.Toast
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.lifecycleScope
+import com.hilvana.app.security.AppLock
+import com.hilvana.app.security.LockScreen
+import com.hilvana.app.widget.refreshWidgets
+import kotlinx.coroutines.launch
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -32,7 +38,7 @@ import com.hilvana.app.ui.onboarding.OnboardingScreen
 import com.hilvana.app.ui.screens.PermissionsState
 import com.hilvana.app.ui.theme.HilvanaTheme
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
 
     // Se relee en onResume: el usuario puede regresar de Ajustes con el permiso dado.
     private var permissions by mutableStateOf(PermissionsState())
@@ -41,11 +47,17 @@ class MainActivity : ComponentActivity() {
     private var onboardingDone by mutableStateOf(true)
     private var userName by mutableStateOf("")
 
+    // Bloqueo: una vez desbloqueado no se vuelve a pedir hasta pasar 1 min en segundo plano.
+    private var appLockEnabled by mutableStateOf(false)
+    private var unlocked by mutableStateOf(false)
+    private var backgroundSince = 0L
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         onboardingDone = prefs.onboardingDone
         userName = prefs.userName
+        appLockEnabled = prefs.appLockEnabled
 
         setContent {
             HilvanaTheme {
@@ -59,7 +71,9 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                if (!onboardingDone) {
+                if (appLockEnabled && !unlocked && onboardingDone) {
+                    LockScreen(onUnlock = { unlock("Desbloquear Hilvana") {} })
+                } else if (!onboardingDone) {
                     OnboardingScreen(
                         permissions = permissions,
                         initialName = userName,
@@ -97,6 +111,11 @@ class MainActivity : ComponentActivity() {
                             prefs.onboardingDone = false
                             onboardingDone = false
                         },
+                        unlocked = unlocked,
+                        onRequestUnlock = ::unlock,
+                        appLockEnabled = appLockEnabled,
+                        canUseAppLock = AppLock.isAvailable(this),
+                        onSetAppLock = ::setAppLock,
                     )
                 }
             }
@@ -106,6 +125,44 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         refreshPermissions()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (backgroundSince > 0 && SystemClock.elapsedRealtime() - backgroundSince > RELOCK_AFTER_MS) {
+            unlocked = false
+        }
+        backgroundSince = 0
+    }
+
+    override fun onStop() {
+        super.onStop()
+        backgroundSince = SystemClock.elapsedRealtime()
+    }
+
+    /** Pide huella/PIN; si sale bien, desbloquea la sesión y sigue con [onSuccess]. */
+    private fun unlock(title: String, onSuccess: () -> Unit) {
+        if (unlocked) {
+            onSuccess()
+            return
+        }
+        AppLock.authenticate(this, title) {
+            unlocked = true
+            onSuccess()
+        }
+    }
+
+    /** Activar o desactivar el bloqueo de la app siempre exige confirmar con huella/PIN. */
+    private fun setAppLock(enabled: Boolean) {
+        AppLock.authenticate(
+            this,
+            title = if (enabled) "Activar bloqueo de Hilvana" else "Quitar bloqueo de Hilvana",
+        ) {
+            prefs.appLockEnabled = enabled
+            appLockEnabled = enabled
+            unlocked = true
+            lifecycleScope.launch { refreshWidgets(this@MainActivity) }
+        }
     }
 
     private fun refreshPermissions() {
@@ -157,4 +214,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun packageUri(): Uri = Uri.parse("package:$packageName")
+
+    private companion object {
+        const val RELOCK_AFTER_MS = 60_000L
+    }
 }
