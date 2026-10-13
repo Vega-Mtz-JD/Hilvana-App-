@@ -27,8 +27,8 @@ import androidx.core.app.NotificationCompat
 import com.hilvana.app.MainActivity
 import com.hilvana.app.data.Item
 import com.hilvana.app.data.ItemType
-import com.hilvana.app.database
 import com.hilvana.app.reminder.ReminderScheduler
+import com.hilvana.app.repository
 import java.text.DateFormat
 import java.util.Date
 import kotlinx.coroutines.CoroutineScope
@@ -183,13 +183,13 @@ class BubbleService : Service() {
 
     private fun saveCapture(text: String, type: ItemType, dueAt: Long?) {
         scope.launch {
-            val item = Item(text = text, type = type, dueAt = dueAt)
-            val id = database.itemDao().insert(item)
+            // El repositorio guarda y programa la alarma si tiene hora.
+            repository.save(Item(text = text, type = type, dueAt = dueAt))
 
             val message = if (dueAt == null) {
                 "Guardado en la Bandeja"
             } else {
-                val exact = ReminderScheduler.schedule(this@BubbleService, item.copy(id = id))
+                val exact = ReminderScheduler.canScheduleExact(this@BubbleService)
                 val time = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(dueAt))
                 if (exact) "Te aviso a las $time" else "Te aviso cerca de las $time (activa las alarmas exactas)"
             }

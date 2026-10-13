@@ -42,8 +42,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.hilvana.app.data.ItemType
+import com.hilvana.app.reminder.QuickTime
 import com.hilvana.app.ui.theme.HilvanaTheme
-import java.util.Calendar
 
 /**
  * Mini-panel de captura que se abre al tocar la burbuja, encima de la app actual.
@@ -117,28 +117,6 @@ class CapturePanel(
         lifecycleOwner?.destroy()
         lifecycleOwner = null
         onClosed()
-    }
-}
-
-/** Horas rápidas para el prototipo; el MVP entenderá texto como "mañana a las 5". */
-private enum class QuickTime(val label: String) {
-    IN_1_MIN("En 1 min"),
-    IN_10_MIN("En 10 min"),
-    IN_1_HOUR("En 1 hora"),
-    TOMORROW_9("Mañana 9:00");
-
-    fun toMillis(now: Long = System.currentTimeMillis()): Long = when (this) {
-        IN_1_MIN -> now + 60_000L
-        IN_10_MIN -> now + 10 * 60_000L
-        IN_1_HOUR -> now + 60 * 60_000L
-        TOMORROW_9 -> Calendar.getInstance().apply {
-            timeInMillis = now
-            add(Calendar.DAY_OF_YEAR, 1)
-            set(Calendar.HOUR_OF_DAY, 9)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
     }
 }
 
