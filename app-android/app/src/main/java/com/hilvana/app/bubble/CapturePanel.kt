@@ -7,12 +7,16 @@ import android.view.WindowManager
 import android.widget.FrameLayout
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
-import com.hilvana.app.repository
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.hilvana.app.capture.CaptureActivity
 import com.hilvana.app.capture.CaptureContent
+import com.hilvana.app.data.ImageStore
 import com.hilvana.app.data.ItemType
+import com.hilvana.app.repository
 import com.hilvana.app.ui.theme.HilvanaTheme
 
 /**
@@ -23,11 +27,14 @@ import com.hilvana.app.ui.theme.HilvanaTheme
 class CapturePanel(
     private val context: Context,
     private val windowManager: WindowManager,
-    private val onSave: (text: String, type: ItemType, dueAt: Long?, folderId: Long?) -> Unit,
+    private val onSave: (text: String, type: ItemType, dueAt: Long?, folderId: Long?, imagePath: String?) -> Unit,
     private val onClosed: () -> Unit,
 ) {
     private var root: FrameLayout? = null
     private var lifecycleOwner: OverlayLifecycleOwner? = null
+
+    /** Imagen pegada en el panel; si se cierra sin guardar, se borra el archivo. */
+    private var imagePath by mutableStateOf<String?>(null)
 
     val isShowing: Boolean get() = root != null
 
@@ -41,8 +48,12 @@ class CapturePanel(
                     val folders by context.repository.folders.collectAsState(initial = emptyList())
                     CaptureContent(
                         folders = folders,
+                        imagePath = imagePath,
+                        onImageChange = ::replaceImage,
+                        onPickImage = ::pickImageInActivity,
                         onSave = { text, type, dueAt, folderId ->
-                            onSave(text, type, dueAt, folderId)
+                            onSave(text, type, dueAt, folderId, imagePath)
+                            imagePath = null // ahora es de la nota guardada
                             dismiss()
                         },
                         onDismiss = ::dismiss,
@@ -69,7 +80,7 @@ class CapturePanel(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            // Sin FLAG_NOT_FOCUSABLE: este panel sí necesita el teclado.
+            // Sin FLAG_NOT_FOCUSABLE: este panel sí necesita el teclado (y el portapapeles).
             0,
             PixelFormat.TRANSLUCENT,
         ).apply {
@@ -88,6 +99,21 @@ class CapturePanel(
         windowManager.removeView(view)
         lifecycleOwner?.destroy()
         lifecycleOwner = null
+        replaceImage(null)
         onClosed()
+    }
+
+    private fun replaceImage(newPath: String?) {
+        if (imagePath != newPath) ImageStore.delete(imagePath)
+        imagePath = newPath
+    }
+
+    /**
+     * El selector de fotos necesita una pantalla (Activity): se cierra el panel y
+     * se abre el de CaptureActivity con lo escrito, que lanza el selector.
+     */
+    private fun pickImageInActivity(currentText: String) {
+        dismiss()
+        context.startActivity(CaptureActivity.pickImageIntent(context, currentText))
     }
 }

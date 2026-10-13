@@ -207,7 +207,7 @@ fun ItemEditorSheet(
                     modifier = Modifier.horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    QuickTime.entries.forEach { option ->
+                    QuickTime.available().forEach { option ->
                         AssistChip(onClick = { dueAt = option.toMillis() }, label = { Text(option.label) })
                     }
                     AssistChip(onClick = { showDatePicker = true }, label = { Text("📅 Elegir…") })

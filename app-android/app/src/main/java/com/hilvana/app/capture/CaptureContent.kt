@@ -1,5 +1,6 @@
 package com.hilvana.app.capture
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -11,11 +12,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
@@ -30,6 +34,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -37,35 +42,55 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.hilvana.app.data.Folder
+import com.hilvana.app.data.ImageStore
 import com.hilvana.app.data.ItemType
 import com.hilvana.app.parser.SpanishDateParser
 import com.hilvana.app.reminder.QuickTime
 import com.hilvana.app.ui.components.ItemImage
 import com.hilvana.app.ui.formatDue
+import kotlinx.coroutines.launch
 
 /**
  * Mini-panel de captura. Lo usan la burbuja (ventana superpuesta) y CaptureActivity
- * (Compartir, mosaico de Ajustes rápidos y acceso directo).
+ * (Compartir, mosaico de Ajustes rápidos, acceso directo y widget).
+ *
+ * La imagen la administra quien muestra el panel ([imagePath] / [onImageChange]),
+ * porque es quien sabe si se guardó o se canceló (y si hay que borrar el archivo).
+ *
+ * @param onPickImage abre el selector de fotos con el texto escrito hasta ahora.
  */
 @Composable
 fun CaptureContent(
     folders: List<Folder>,
+    imagePath: String?,
+    onImageChange: (String?) -> Unit,
+    onPickImage: (currentText: String) -> Unit,
     onSave: (text: String, type: ItemType, dueAt: Long?, folderId: Long?) -> Unit,
     onDismiss: () -> Unit,
     initialText: String = "",
-    /** Imagen recibida desde "Compartir" (se muestra debajo del texto). */
-    imagePath: String? = null,
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
+
     var text by rememberSaveable { mutableStateOf(initialText) }
     var selectedType by remember { mutableStateOf<ItemType?>(null) }
     var selectedFolderId by remember { mutableStateOf<Long?>(null) }
     var quickTime by remember { mutableStateOf<QuickTime?>(null) }
+    var customDue by remember { mutableStateOf<Long?>(null) }
     var ignoreDetection by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
+    val clipKind = remember { ClipboardReader.peekKind(context) }
+    val windowHeight = LocalWindowInfo.current.containerSize.height
+    val maxPanelHeight = with(LocalDensity.current) { (windowHeight * 0.85f).toDp() }
 
     // Captura inteligente: "mañana a las 5 llamar a mamá" → Recordatorio mañana 17:00,
     // y "links: https://…" → Nota en la carpeta Links (si existe).
@@ -80,10 +105,25 @@ fun CaptureContent(
     val effectiveFolder = if (!isNote) null
     else selectedFolderId?.let { id -> folders.firstOrNull { it.id == id } } ?: prefixFolder
     val usesPrefix = isNote && prefixFolder != null && effectiveFolder == prefixFolder
-    val usesDetection = detected?.type != null && quickTime == null &&
+    val manualTime = quickTime != null || customDue != null
+    val usesDetection = detected?.type != null && !manualTime &&
         (selectedType == null || selectedType == detected.type)
+    val reminderDue = if (isReminder) quickTime?.toMillis() ?: customDue ?: detectedDue else null
 
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
+
+    fun paste() {
+        when (val clip = ClipboardReader.read(context)) {
+            null -> Toast.makeText(context, "No hay nada copiado", Toast.LENGTH_SHORT).show()
+            is ClipboardReader.Clip.Text ->
+                text = if (text.isBlank()) clip.text else text.trimEnd() + "\n" + clip.text
+            is ClipboardReader.Clip.Image -> scope.launch {
+                val imported = ImageStore.import(context, clip.uri)
+                if (imported != null) onImageChange(imported)
+                else Toast.makeText(context, "No se pudo pegar la imagen", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     // Fondo oscurecido: tocar fuera del panel lo cierra.
     Box(
@@ -99,8 +139,10 @@ fun CaptureContent(
         Card(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(start = 16.dp, end = 16.dp, top = 56.dp)
+                .padding(start = 16.dp, end = 16.dp, top = 48.dp)
                 .fillMaxWidth()
+                // Con el calendario abierto el panel crece: que no se salga de la pantalla.
+                .heightIn(max = maxPanelHeight)
                 // Evita que un toque dentro del panel llegue al fondo y lo cierre.
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
@@ -109,7 +151,9 @@ fun CaptureContent(
                 ),
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text("¿Qué no quieres olvidar?", style = MaterialTheme.typography.titleMedium)
@@ -117,7 +161,7 @@ fun CaptureContent(
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },
-                    placeholder = { Text("Escribe aquí…") },
+                    placeholder = { Text("Escribe, pega un link o agrega una imagen…") },
                     minLines = 2,
                     maxLines = 6,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
@@ -126,14 +170,35 @@ fun CaptureContent(
                         .focusRequester(focusRequester),
                 )
 
-                if (imagePath != null) {
-                    ItemImage(
-                        path = imagePath,
-                        maxSide = 720,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(140.dp),
+                // Pegar lo copiado o adjuntar una imagen: guardar links, videos y capturas al toque.
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    AssistChip(
+                        onClick = ::paste,
+                        label = { Text("📋 Pegar" + (clipKind?.let { " ${it.label}" } ?: "")) },
                     )
+                    AssistChip(
+                        onClick = { onPickImage(text) },
+                        label = { Text(if (imagePath == null) "🖼️ Imagen" else "🖼️ Cambiar imagen") },
+                    )
+                }
+
+                if (imagePath != null) {
+                    Box {
+                        ItemImage(
+                            path = imagePath,
+                            maxSide = 720,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(140.dp),
+                        )
+                        TextButton(
+                            onClick = { onImageChange(null) },
+                            modifier = Modifier.align(Alignment.TopEnd),
+                        ) { Text("Quitar ✕") }
+                    }
                 }
 
                 // Lo que Hilvana entendió; tocarlo lo descarta y se guarda el texto tal cual.
@@ -165,7 +230,7 @@ fun CaptureContent(
                     )
                 }
 
-                // Elegir tipo es opcional: si no se elige, se guarda como Nota en la Bandeja.
+                // Tipo: Nota / Tarea / Recordatorio. Sin elegir, se guarda como Nota.
                 Row(
                     modifier = Modifier.horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -197,20 +262,21 @@ fun CaptureContent(
                     }
                 }
 
-                if (isReminder && detectedDue == null) {
-                    Text("¿Cuándo te aviso?", style = MaterialTheme.typography.labelLarge)
-                    Row(
-                        modifier = Modifier.horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        QuickTime.entries.forEach { option ->
-                            FilterChip(
-                                selected = quickTime == option,
-                                onClick = { quickTime = option },
-                                label = { Text(option.label) },
-                            )
-                        }
-                    }
+                if (isReminder) {
+                    ReminderPicker(
+                        dueAt = reminderDue,
+                        selectedQuick = quickTime,
+                        onQuick = {
+                            quickTime = it
+                            customDue = null
+                        },
+                        onCustom = {
+                            customDue = it
+                            quickTime = null
+                        },
+                        // Esconde el teclado para que se vea el calendario.
+                        onOpenCalendar = { focusManager.clearFocus() },
+                    )
                 }
 
                 Row(
@@ -220,18 +286,15 @@ fun CaptureContent(
                     TextButton(onClick = onDismiss) { Text("Cancelar") }
                     Button(
                         onClick = {
-                            val dueAt = if (isReminder) quickTime?.toMillis() ?: detectedDue else null
                             val finalText = when {
                                 usesPrefix -> parsed.textAfterPrefix
                                 usesDetection -> parsed.text
                                 else -> text.trim()
                             }.ifBlank { text.trim() }.ifBlank { "📷 Imagen" }
-                            onSave(finalText, effectiveType ?: ItemType.NOTE, dueAt, effectiveFolder?.id)
+                            onSave(finalText, effectiveType ?: ItemType.NOTE, reminderDue, effectiveFolder?.id)
                         },
-                        // Un recordatorio necesita hora.
-                        // Con imagen se puede guardar aunque no se escriba nada.
-                        enabled = (text.isNotBlank() || imagePath != null) &&
-                            (!isReminder || quickTime != null || detectedDue != null),
+                        // Con imagen se puede guardar sin texto; un recordatorio necesita hora.
+                        enabled = (text.isNotBlank() || imagePath != null) && (!isReminder || reminderDue != null),
                     ) { Text("Guardar") }
                 }
             }
