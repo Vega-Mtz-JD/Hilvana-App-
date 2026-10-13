@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
@@ -76,6 +77,15 @@ fun ItemCard(
                     },
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            item.imagePath?.let { path ->
+                ItemImage(
+                    path = path,
+                    maxSide = 160,
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                        .size(56.dp),
                 )
             }
             if (link != null) {

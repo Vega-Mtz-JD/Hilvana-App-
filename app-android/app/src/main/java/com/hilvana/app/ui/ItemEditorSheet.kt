@@ -42,8 +42,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.runtime.rememberCoroutineScope
 import com.hilvana.app.data.Folder
+import com.hilvana.app.data.ImageStore
 import com.hilvana.app.data.Item
+import com.hilvana.app.ui.components.ImageViewer
+import com.hilvana.app.ui.components.ItemImage
+import kotlinx.coroutines.launch
 import com.hilvana.app.data.ItemType
 import com.hilvana.app.reminder.QuickTime
 import java.util.Calendar
@@ -68,19 +81,47 @@ fun ItemEditorSheet(
     var dueAt by rememberSaveable { mutableStateOf(item.dueAt) }
     var done by rememberSaveable { mutableStateOf(item.done) }
     var folderId by rememberSaveable { mutableStateOf(item.folderId) }
+    var imagePath by rememberSaveable { mutableStateOf(item.imagePath) }
+    var showImage by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     // Fecha elegida en el calendario, esperando que se elija la hora.
     var pickedDateUtc by remember { mutableStateOf<Long?>(null) }
 
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val pickImage = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val imported = ImageStore.import(context, uri)
+                if (imported == null) {
+                    Toast.makeText(context, "No se pudo abrir esa imagen", Toast.LENGTH_SHORT).show()
+                } else {
+                    // La imagen elegida antes en este editor (sin guardar) ya no sirve.
+                    if (imagePath != item.imagePath) ImageStore.delete(imagePath)
+                    imagePath = imported
+                }
+            }
+        }
+    }
+
+    /** Al salir sin guardar, borra la imagen que se agregó en este editor. */
+    fun discardNewImage() {
+        if (imagePath != item.imagePath) ImageStore.delete(imagePath)
+    }
+
     val canHaveDate = type.isActionable
-    val canSave = text.isNotBlank() && (type != ItemType.REMINDER || dueAt != null)
+    val canSave = (text.isNotBlank() || imagePath != null) && (type != ItemType.REMINDER || dueAt != null)
 
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {
+            discardNewImage()
+            onDismiss()
+        },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     ) {
         Column(
             modifier = Modifier
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
                 .padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -95,6 +136,31 @@ fun ItemEditorSheet(
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                 modifier = Modifier.fillMaxWidth(),
             )
+
+            val currentImage = imagePath
+            if (currentImage != null) {
+                ItemImage(
+                    path = currentImage,
+                    maxSide = 1024,
+                    onClick = { showImage = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp),
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { pickImage.launch(PickVisualMediaRequest(ImageOnly)) }) {
+                        Text("Cambiar imagen")
+                    }
+                    TextButton(onClick = {
+                        discardNewImage()
+                        imagePath = null
+                    }) { Text("Quitar") }
+                }
+            } else {
+                OutlinedButton(onClick = { pickImage.launch(PickVisualMediaRequest(ImageOnly)) }) {
+                    Text("📷 Agregar imagen")
+                }
+            }
 
             Row(
                 modifier = Modifier.horizontalScroll(rememberScrollState()),
@@ -161,7 +227,10 @@ fun ItemEditorSheet(
             ) {
                 if (!isNew) {
                     TextButton(
-                        onClick = { onDelete(item) },
+                        onClick = {
+                            discardNewImage()
+                            onDelete(item)
+                        },
                         colors = ButtonDefaults.textButtonColors(
                             contentColor = MaterialTheme.colorScheme.error,
                         ),
@@ -172,12 +241,17 @@ fun ItemEditorSheet(
                     }
                 }
                 Spacer(Modifier.weight(1f))
-                TextButton(onClick = onDismiss) { Text("Cancelar") }
+                TextButton(onClick = {
+                    discardNewImage()
+                    onDismiss()
+                }) { Text("Cancelar") }
                 Button(
                     onClick = {
                         onSave(
                             item.copy(
-                                text = text.trim(),
+                                // Una imagen sola también es una nota válida.
+                                text = text.trim().ifBlank { "📷 Imagen" },
+                                imagePath = imagePath,
                                 type = type,
                                 dueAt = if (canHaveDate) dueAt else null,
                                 done = canHaveDate && done,
@@ -189,6 +263,11 @@ fun ItemEditorSheet(
                 ) { Text("Guardar") }
             }
         }
+    }
+
+    val viewerImage = imagePath
+    if (showImage && viewerImage != null) {
+        ImageViewer(path = viewerImage, onDismiss = { showImage = false })
     }
 
     if (showDatePicker) {

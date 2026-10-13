@@ -28,14 +28,20 @@ class ItemRepository(
 
     /** Inserta (id = 0) o actualiza el elemento. Devuelve su id. */
     suspend fun save(item: Item): Long {
+        val previous = if (item.id == 0L) null else dao.getById(item.id)
         val id = if (item.id == 0L) dao.insert(item) else item.id.also { dao.update(item) }
         syncAlarm(item.copy(id = id))
+        // Si cambió o se quitó la imagen, la anterior ya no la usa nadie.
+        if (previous?.imagePath != null && previous.imagePath != item.imagePath) {
+            ImageStore.delete(previous.imagePath)
+        }
         return id
     }
 
     suspend fun delete(item: Item) {
         ReminderScheduler.cancel(context, item.id)
         dao.delete(item)
+        ImageStore.delete(item.imagePath)
     }
 
     private fun syncAlarm(item: Item) {

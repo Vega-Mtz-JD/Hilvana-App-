@@ -13,9 +13,18 @@ import java.util.Date
  * Guarda lo capturado en la Bandeja (programando la alarma si tiene hora) y avisa
  * con un mensaje corto. Llamar desde el hilo principal.
  */
-suspend fun saveCapture(context: Context, text: String, type: ItemType, dueAt: Long?, folderId: Long?) {
+suspend fun saveCapture(
+    context: Context,
+    text: String,
+    type: ItemType,
+    dueAt: Long?,
+    folderId: Long?,
+    imagePath: String? = null,
+) {
     val app = context.applicationContext
-    app.repository.save(Item(text = text, type = type, dueAt = dueAt, folderId = folderId))
+    app.repository.save(
+        Item(text = text, type = type, dueAt = dueAt, folderId = folderId, imagePath = imagePath)
+    )
 
     val message = if (dueAt == null) {
         "Guardado en la Bandeja"

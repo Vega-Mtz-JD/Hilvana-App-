@@ -30,4 +30,6 @@ data class Item(
     val createdAt: Long = System.currentTimeMillis(),
     /** Carpeta de la nota (solo para Notas); null = sin carpeta. */
     val folderId: Long? = null,
+    /** Imagen adjunta guardada por [ImageStore] (foto o captura), si tiene. */
+    val imagePath: String? = null,
 )

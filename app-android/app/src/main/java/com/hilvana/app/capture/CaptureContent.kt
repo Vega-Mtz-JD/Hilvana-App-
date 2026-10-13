@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -43,6 +44,7 @@ import com.hilvana.app.data.Folder
 import com.hilvana.app.data.ItemType
 import com.hilvana.app.parser.SpanishDateParser
 import com.hilvana.app.reminder.QuickTime
+import com.hilvana.app.ui.components.ItemImage
 import com.hilvana.app.ui.formatDue
 
 /**
@@ -55,6 +57,8 @@ fun CaptureContent(
     onSave: (text: String, type: ItemType, dueAt: Long?, folderId: Long?) -> Unit,
     onDismiss: () -> Unit,
     initialText: String = "",
+    /** Imagen recibida desde "Compartir" (se muestra debajo del texto). */
+    imagePath: String? = null,
 ) {
     var text by rememberSaveable { mutableStateOf(initialText) }
     var selectedType by remember { mutableStateOf<ItemType?>(null) }
@@ -121,6 +125,16 @@ fun CaptureContent(
                         .fillMaxWidth()
                         .focusRequester(focusRequester),
                 )
+
+                if (imagePath != null) {
+                    ItemImage(
+                        path = imagePath,
+                        maxSide = 720,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(140.dp),
+                    )
+                }
 
                 // Lo que Hilvana entendió; tocarlo lo descarta y se guarda el texto tal cual.
                 if (detected != null) {
@@ -211,11 +225,12 @@ fun CaptureContent(
                                 usesPrefix -> parsed.textAfterPrefix
                                 usesDetection -> parsed.text
                                 else -> text.trim()
-                            }.ifBlank { text.trim() }
+                            }.ifBlank { text.trim() }.ifBlank { "📷 Imagen" }
                             onSave(finalText, effectiveType ?: ItemType.NOTE, dueAt, effectiveFolder?.id)
                         },
                         // Un recordatorio necesita hora.
-                        enabled = text.isNotBlank() &&
+                        // Con imagen se puede guardar aunque no se escriba nada.
+                        enabled = (text.isNotBlank() || imagePath != null) &&
                             (!isReminder || quickTime != null || detectedDue != null),
                     ) { Text("Guardar") }
                 }
