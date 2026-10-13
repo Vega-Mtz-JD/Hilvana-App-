@@ -20,7 +20,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -38,11 +42,14 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.hilvana.app.data.ItemType
+import com.hilvana.app.parser.SpanishDateParser
 import com.hilvana.app.reminder.QuickTime
+import com.hilvana.app.ui.formatDue
 import com.hilvana.app.ui.theme.HilvanaTheme
 
 /**
@@ -128,8 +135,18 @@ private fun CapturePanelContent(
     var text by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf<ItemType?>(null) }
     var quickTime by remember { mutableStateOf<QuickTime?>(null) }
-    val isReminder = selectedType == ItemType.REMINDER
+    var ignoreDetection by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
+
+    // Captura inteligente: "mañana a las 5 llamar a mamá" → Recordatorio mañana 17:00.
+    val parsed = remember(text) { SpanishDateParser.parse(text) }
+    val detected = parsed.takeIf { !ignoreDetection && it.type != null }
+    val detectedDue = detected?.dueAtMillis()
+    // Lo que el usuario elige a mano siempre gana sobre lo detectado.
+    val effectiveType = selectedType ?: detected?.type
+    val isReminder = effectiveType == ItemType.REMINDER
+    val usesDetection = detected != null && quickTime == null &&
+        (selectedType == null || selectedType == detected.type)
 
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
@@ -173,6 +190,28 @@ private fun CapturePanelContent(
                         .focusRequester(focusRequester),
                 )
 
+                // Lo que Hilvana entendió; tocarlo lo descarta y se guarda el texto tal cual.
+                if (detected != null) {
+                    InputChip(
+                        selected = true,
+                        onClick = { ignoreDetection = true },
+                        label = {
+                            Text(
+                                text = buildString {
+                                    append("✨ ")
+                                    append(detectedDue?.let { "⏰ " + formatDue(it) } ?: detected.type?.label)
+                                    if (detected.text.isNotBlank()) append(" · ").append(detected.text)
+                                },
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        },
+                        trailingIcon = {
+                            Icon(Icons.Filled.Close, contentDescription = "Descartar lo detectado")
+                        },
+                    )
+                }
+
                 // Elegir tipo es opcional: si no se elige, se guarda como Nota en la Bandeja.
                 Row(
                     modifier = Modifier.horizontalScroll(rememberScrollState()),
@@ -180,14 +219,14 @@ private fun CapturePanelContent(
                 ) {
                     ItemType.entries.forEach { type ->
                         FilterChip(
-                            selected = selectedType == type,
+                            selected = effectiveType == type,
                             onClick = { selectedType = if (selectedType == type) null else type },
                             label = { Text(type.label) },
                         )
                     }
                 }
 
-                if (isReminder) {
+                if (isReminder && detectedDue == null) {
                     Text("¿Cuándo te aviso?", style = MaterialTheme.typography.labelLarge)
                     Row(
                         modifier = Modifier.horizontalScroll(rememberScrollState()),
@@ -210,11 +249,17 @@ private fun CapturePanelContent(
                     TextButton(onClick = onDismiss) { Text("Cancelar") }
                     Button(
                         onClick = {
-                            val dueAt = if (isReminder) quickTime?.toMillis() else null
-                            onSave(text.trim(), selectedType ?: ItemType.NOTE, dueAt)
+                            val dueAt = if (isReminder) quickTime?.toMillis() ?: detectedDue else null
+                            val finalText = if (usesDetection) {
+                                parsed.text.ifBlank { text.trim() }
+                            } else {
+                                text.trim()
+                            }
+                            onSave(finalText, effectiveType ?: ItemType.NOTE, dueAt)
                         },
                         // Un recordatorio necesita hora.
-                        enabled = text.isNotBlank() && (!isReminder || quickTime != null),
+                        enabled = text.isNotBlank() &&
+                            (!isReminder || quickTime != null || detectedDue != null),
                     ) { Text("Guardar") }
                 }
             }
