@@ -54,7 +54,11 @@ import com.hilvana.app.data.ImageStore
 import com.hilvana.app.data.ItemType
 import com.hilvana.app.parser.SpanishDateParser
 import com.hilvana.app.reminder.QuickTime
+import androidx.compose.foundation.BorderStroke
 import com.hilvana.app.ui.components.ItemImage
+import com.hilvana.app.ui.components.TypeSelector
+import com.hilvana.app.ui.components.color
+import com.hilvana.app.ui.components.prompt
 import com.hilvana.app.ui.formatDue
 import kotlinx.coroutines.launch
 
@@ -109,6 +113,7 @@ fun CaptureContent(
     val usesDetection = detected?.type != null && !manualTime &&
         (selectedType == null || selectedType == detected.type)
     val reminderDue = if (isReminder) quickTime?.toMillis() ?: customDue ?: detectedDue else null
+    val shownType = effectiveType ?: ItemType.NOTE
 
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
@@ -137,6 +142,8 @@ fun CaptureContent(
             ),
     ) {
         Card(
+            // El borde toma el color del tipo elegido: se ve de un vistazo qué se guarda.
+            border = BorderStroke(2.dp, shownType.color),
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(start = 16.dp, end = 16.dp, top = 48.dp)
@@ -156,11 +163,13 @@ fun CaptureContent(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text("¿Qué no quieres olvidar?", style = MaterialTheme.typography.titleMedium)
+                // Primero: qué se va a guardar. Separado del resto para no confundir.
+                TypeSelector(selected = shownType, onSelect = { selectedType = it })
 
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },
+                    label = { Text(shownType.prompt) },
                     placeholder = { Text("Escribe, pega un link o agrega una imagen…") },
                     minLines = 2,
                     maxLines = 6,
@@ -230,22 +239,9 @@ fun CaptureContent(
                     )
                 }
 
-                // Tipo: Nota / Tarea / Recordatorio. Sin elegir, se guarda como Nota.
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    ItemType.entries.forEach { type ->
-                        FilterChip(
-                            selected = effectiveType == type,
-                            onClick = { selectedType = if (selectedType == type) null else type },
-                            label = { Text(type.label) },
-                        )
-                    }
-                }
-
-                // Carpeta (solo notas). Sin elegir, la nota queda sin carpeta.
+                // Lo propio de cada tipo: carpeta (Nota), aviso (Tarea) o cuándo (Recordatorio).
                 if (isNote && folders.isNotEmpty()) {
+                    Text("Carpeta", style = MaterialTheme.typography.labelLarge)
                     Row(
                         modifier = Modifier.horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -260,6 +256,15 @@ fun CaptureContent(
                             )
                         }
                     }
+                }
+
+                if (shownType == ItemType.TASK) {
+                    Text(
+                        "Aparecerá en Tareas para hacerla cuando puedas. Si necesitas que suene a una " +
+                            "hora, elige ⏰ Recordatorio.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
 
                 if (isReminder) {

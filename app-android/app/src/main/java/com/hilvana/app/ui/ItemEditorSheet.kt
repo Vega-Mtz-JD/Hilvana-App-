@@ -56,6 +56,8 @@ import com.hilvana.app.data.ImageStore
 import com.hilvana.app.data.Item
 import com.hilvana.app.ui.components.ImageViewer
 import com.hilvana.app.ui.components.ItemImage
+import com.hilvana.app.ui.components.TypeSelector
+import com.hilvana.app.ui.components.prompt
 import kotlinx.coroutines.launch
 import com.hilvana.app.data.ItemType
 import com.hilvana.app.reminder.QuickTime
@@ -128,10 +130,12 @@ fun ItemEditorSheet(
         ) {
             Text(if (isNew) "Nuevo" else "Editar", style = MaterialTheme.typography.titleLarge)
 
+            TypeSelector(selected = type, onSelect = { type = it })
+
             OutlinedTextField(
                 value = text,
                 onValueChange = { text = it },
-                placeholder = { Text("¿Qué no quieres olvidar?") },
+                label = { Text(type.prompt) },
                 minLines = 2,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                 modifier = Modifier.fillMaxWidth(),
@@ -162,18 +166,6 @@ fun ItemEditorSheet(
                 }
             }
 
-            Row(
-                modifier = Modifier.horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                ItemType.entries.forEach { option ->
-                    FilterChip(
-                        selected = type == option,
-                        onClick = { type = option },
-                        label = { Text(option.label) },
-                    )
-                }
-            }
 
             if (type == ItemType.NOTE && folders.isNotEmpty()) {
                 Text("Carpeta", style = MaterialTheme.typography.labelLarge)

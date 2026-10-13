@@ -72,7 +72,7 @@ fun ItemCard(
                 )
                 Text(
                     text = buildString {
-                        append(folder?.label ?: item.type.label)
+                        append(folder?.label ?: "${item.type.emoji} ${item.type.label}")
                         item.dueAt?.let { append(" · ⏰ ").append(formatDue(it)) }
                     },
                     style = MaterialTheme.typography.labelSmall,
