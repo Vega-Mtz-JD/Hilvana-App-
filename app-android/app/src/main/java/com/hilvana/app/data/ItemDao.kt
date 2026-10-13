@@ -26,6 +26,9 @@ interface ItemDao {
     @Query("UPDATE items SET folderId = NULL WHERE folderId = :folderId")
     suspend fun clearFolder(folderId: Long)
 
+    @Query("SELECT * FROM items ORDER BY createdAt")
+    suspend fun getAll(): List<Item>
+
     @Query("SELECT * FROM items WHERE id = :id")
     suspend fun getById(id: Long): Item?
 

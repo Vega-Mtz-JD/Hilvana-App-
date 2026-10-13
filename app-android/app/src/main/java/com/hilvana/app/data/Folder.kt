@@ -40,6 +40,9 @@ interface FolderDao {
     @Query("SELECT * FROM folders ORDER BY createdAt")
     fun observeAll(): Flow<List<Folder>>
 
+    @Query("SELECT * FROM folders ORDER BY createdAt")
+    suspend fun getAll(): List<Folder>
+
     @Insert
     suspend fun insert(folder: Folder): Long
 

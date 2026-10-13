@@ -21,7 +21,13 @@ class UserPrefs(context: Context) {
         get() = prefs.getBoolean(KEY_APP_LOCK, false)
         set(value) = prefs.edit { putBoolean(KEY_APP_LOCK, value) }
 
+    /** Cuándo se exportó el último respaldo (0 = nunca). */
+    var lastBackupAt: Long
+        get() = prefs.getLong(KEY_LAST_BACKUP, 0L)
+        set(value) = prefs.edit { putLong(KEY_LAST_BACKUP, value) }
+
     private companion object {
+        const val KEY_LAST_BACKUP = "last_backup_at"
         const val KEY_ONBOARDING_DONE = "onboarding_done"
         const val KEY_USER_NAME = "user_name"
         const val KEY_APP_LOCK = "app_lock"

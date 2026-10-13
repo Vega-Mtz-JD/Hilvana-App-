@@ -92,6 +92,8 @@ fun HilvanaRoot(
 ) {
     val allItems by viewModel.items.collectAsStateWithLifecycle()
     val folders by viewModel.folders.collectAsStateWithLifecycle()
+    val lastBackupAt by viewModel.lastBackupAt.collectAsStateWithLifecycle()
+    val backupBusy by viewModel.backupBusy.collectAsStateWithLifecycle()
     // Mientras no se desbloquee, las notas de carpetas protegidas no se muestran en ningún lado.
     val lockedFolderIds = folders.filter { it.locked }.map { it.id }.toSet()
     val items = if (unlocked || lockedFolderIds.isEmpty()) allItems
@@ -133,6 +135,15 @@ fun HilvanaRoot(
             appLockEnabled = appLockEnabled,
             canUseAppLock = canUseAppLock,
             onSetAppLock = onSetAppLock,
+            lastBackupAt = lastBackupAt,
+            backupBusy = backupBusy,
+            onExportBackup = viewModel::exportBackup,
+            onImportBackup = viewModel::importBackup,
+            exportGate = { action ->
+                // El respaldo incluye las carpetas protegidas: si hay algo protegido, pedir huella.
+                if (appLockEnabled || folders.any { it.locked }) onRequestUnlock("Exportar respaldo", action)
+                else action()
+            },
         )
         return
     }

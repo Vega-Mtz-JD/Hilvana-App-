@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import java.io.InputStream
 import java.util.UUID
 import kotlin.math.max
 
@@ -49,6 +50,13 @@ object ImageStore {
             file.absolutePath
         }.getOrNull()
     }
+
+    /** Guarda tal cual (ya viene comprimida) una imagen leída de un respaldo. */
+    fun saveCopy(context: Context, input: InputStream): String? = runCatching {
+        val file = File(dir(context), "${UUID.randomUUID()}.jpg")
+        FileOutputStream(file).use { input.copyTo(it) }
+        file.absolutePath
+    }.getOrNull()
 
     /** Carga una imagen guardada reducida a [maxSide] píxeles (para miniaturas). */
     suspend fun load(path: String, maxSide: Int): ImageBitmap? = withContext(Dispatchers.IO) {

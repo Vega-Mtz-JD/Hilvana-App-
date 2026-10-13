@@ -17,6 +17,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.LinearProgressIndicator
+import java.text.DateFormat
+import java.time.LocalDate
+import java.util.Date
 import androidx.compose.foundation.layout.Row
 import androidx.compose.ui.Alignment
 import androidx.compose.material3.Scaffold
@@ -52,7 +59,20 @@ fun SettingsScreen(
     appLockEnabled: Boolean,
     canUseAppLock: Boolean,
     onSetAppLock: (Boolean) -> Unit,
+    lastBackupAt: Long,
+    backupBusy: Boolean,
+    onExportBackup: (Uri) -> Unit,
+    onImportBackup: (Uri) -> Unit,
+    /** Ejecuta la acción tras pedir huella si hay algo protegido (el respaldo lo incluye todo). */
+    exportGate: (() -> Unit) -> Unit,
 ) {
+    val createBackup = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri -> uri?.let(onExportBackup) }
+    val openBackup = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let(onImportBackup)
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -110,6 +130,50 @@ fun SettingsScreen(
                                 "para usar esta opción."
                         },
                         style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+
+            Text("Respaldo", style = MaterialTheme.typography.titleMedium)
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Guarda todo (notas, tareas, recordatorios, carpetas e imágenes) en un archivo " +
+                            "para cambiar de teléfono o tener una copia. Tú eliges dónde: Drive, Descargas, " +
+                            "WhatsApp…",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Text(
+                        if (lastBackupAt == 0L) {
+                            "Aún no has hecho un respaldo."
+                        } else {
+                            "Último respaldo: " + DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
+                                .format(Date(lastBackupAt))
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = {
+                                exportGate { createBackup.launch("hilvana-respaldo-${LocalDate.now()}.zip") }
+                            },
+                            enabled = !backupBusy,
+                        ) { Text("📤 Exportar") }
+                        OutlinedButton(
+                            onClick = { openBackup.launch(arrayOf("application/zip", "application/octet-stream")) },
+                            enabled = !backupBusy,
+                        ) { Text("📥 Importar") }
+                    }
+                    if (backupBusy) {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
+                    Text(
+                        "Importar suma lo del respaldo a lo que ya tienes; no borra nada ni duplica.\n" +
+                            "⚠️ El archivo no está cifrado e incluye tus carpetas protegidas: guárdalo en un " +
+                            "lugar seguro.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }

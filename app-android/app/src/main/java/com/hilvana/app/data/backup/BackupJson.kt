@@ -1,0 +1,97 @@
+package com.hilvana.app.data.backup
+
+import com.hilvana.app.data.Folder
+import com.hilvana.app.data.Item
+import com.hilvana.app.data.ItemType
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
+
+/** Un elemento leído del respaldo, con el nombre de su imagen dentro del zip. */
+data class BackupItem(val item: Item, val imageName: String?)
+
+data class BackupContent(val folders: List<Folder>, val items: List<BackupItem>)
+
+class InvalidBackupException(message: String) : Exception(message)
+
+/**
+ * Formato del respaldo (data.json dentro del zip). Se guardan los ids originales
+ * solo para relacionar notas con carpetas; al importar se crean ids nuevos.
+ */
+object BackupJson {
+
+    const val FORMAT = "hilvana-backup"
+    const val VERSION = 1
+
+    fun encode(folders: List<Folder>, items: List<Item>, exportedAt: Long): String {
+        val json = JSONObject()
+            .put("format", FORMAT)
+            .put("version", VERSION)
+            .put("exportedAt", exportedAt)
+            .put("folders", JSONArray(folders.map { folder ->
+                JSONObject()
+                    .put("id", folder.id)
+                    .put("name", folder.name)
+                    .put("emoji", folder.emoji)
+                    .put("createdAt", folder.createdAt)
+                    .put("locked", folder.locked)
+            }))
+            .put("items", JSONArray(items.map { item ->
+                JSONObject()
+                    .put("text", item.text)
+                    .put("type", item.type.name)
+                    .put("inInbox", item.inInbox)
+                    .put("done", item.done)
+                    .put("dueAt", item.dueAt ?: JSONObject.NULL)
+                    .put("createdAt", item.createdAt)
+                    .put("folderId", item.folderId ?: JSONObject.NULL)
+                    .put("image", item.imagePath?.let { File(it).name } ?: JSONObject.NULL)
+            }))
+        return json.toString(2)
+    }
+
+    fun decode(text: String): BackupContent {
+        val json = runCatching { JSONObject(text) }.getOrNull()
+        if (json == null || json.optString("format") != FORMAT) {
+            throw InvalidBackupException("Ese archivo no es un respaldo de Hilvana")
+        }
+        if (json.optInt("version") > VERSION) {
+            throw InvalidBackupException("El respaldo es de una versión más nueva de Hilvana: actualiza la app")
+        }
+
+        val folders = json.optJSONArray("folders").objects().map { f ->
+            Folder(
+                id = f.getLong("id"),
+                name = f.getString("name"),
+                emoji = f.optString("emoji", Folder.DEFAULT_EMOJI),
+                createdAt = f.optLong("createdAt", System.currentTimeMillis()),
+                locked = f.optBoolean("locked", false),
+            )
+        }
+        val items = json.optJSONArray("items").objects().map { i ->
+            BackupItem(
+                item = Item(
+                    text = i.getString("text"),
+                    // Tipos de versiones viejas (p. ej. "IDEA") se leen como Nota.
+                    type = ItemType.entries.firstOrNull { it.name == i.optString("type") } ?: ItemType.NOTE,
+                    inInbox = i.optBoolean("inInbox", false),
+                    done = i.optBoolean("done", false),
+                    dueAt = i.optLongOrNull("dueAt"),
+                    createdAt = i.optLong("createdAt", System.currentTimeMillis()),
+                    folderId = i.optLongOrNull("folderId"),
+                ),
+                imageName = i.optStringOrNull("image"),
+            )
+        }
+        return BackupContent(folders, items)
+    }
+
+    private fun JSONArray?.objects(): List<JSONObject> =
+        if (this == null) emptyList() else (0 until length()).map { getJSONObject(it) }
+
+    private fun JSONObject.optLongOrNull(key: String): Long? =
+        if (isNull(key) || !has(key)) null else getLong(key)
+
+    private fun JSONObject.optStringOrNull(key: String): String? =
+        if (isNull(key) || !has(key)) null else getString(key)
+}
