@@ -74,12 +74,14 @@ private fun reminderTimeFor(date: LocalDate): Long {
 fun HilvanaRoot(
     permissions: PermissionsState,
     bubbleRunning: Boolean,
+    userName: String,
     onRequestOverlay: () -> Unit,
     onRequestNotifications: () -> Unit,
     onRequestExactAlarms: () -> Unit,
     onOpenAppSettings: () -> Unit,
     onToggleBubble: () -> Unit,
     onAddCaptureTile: (() -> Unit)?,
+    onShowWelcome: () -> Unit,
     viewModel: ItemsViewModel = viewModel(),
 ) {
     val items by viewModel.items.collectAsStateWithLifecycle()
@@ -112,6 +114,7 @@ fun HilvanaRoot(
             onOpenAppSettings = onOpenAppSettings,
             onToggleBubble = onToggleBubble,
             onAddCaptureTile = onAddCaptureTile,
+            onShowWelcome = onShowWelcome,
         )
         return
     }
@@ -119,7 +122,15 @@ fun HilvanaRoot(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (tab == Tab.TODAY) "Hilvana" else tab.label) },
+                title = {
+                    Text(
+                        when {
+                            tab != Tab.TODAY -> tab.label
+                            userName.isNotBlank() -> "Hola, $userName"
+                            else -> "Hilvana"
+                        }
+                    )
+                },
                 actions = {
                     IconButton(onClick = { showSettings = true }) {
                         if (permissions.allGranted) {

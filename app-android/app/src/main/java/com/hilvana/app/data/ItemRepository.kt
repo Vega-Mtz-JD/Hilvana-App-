@@ -2,6 +2,7 @@ package com.hilvana.app.data
 
 import android.content.Context
 import com.hilvana.app.reminder.ReminderScheduler
+import com.hilvana.app.widget.refreshWidgets
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -35,6 +36,7 @@ class ItemRepository(
         if (previous?.imagePath != null && previous.imagePath != item.imagePath) {
             ImageStore.delete(previous.imagePath)
         }
+        refreshWidgets(context)
         return id
     }
 
@@ -42,6 +44,7 @@ class ItemRepository(
         ReminderScheduler.cancel(context, item.id)
         dao.delete(item)
         ImageStore.delete(item.imagePath)
+        refreshWidgets(context)
     }
 
     private fun syncAlarm(item: Item) {

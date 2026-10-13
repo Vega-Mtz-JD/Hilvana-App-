@@ -45,6 +45,7 @@ fun SettingsScreen(
     onToggleBubble: () -> Unit,
     /** null si el teléfono no permite agregar el mosaico desde la app (Android < 13). */
     onAddCaptureTile: (() -> Unit)?,
+    onShowWelcome: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -131,9 +132,13 @@ fun SettingsScreen(
                 explanation = "Algunos teléfonos (Xiaomi, Samsung, Huawei) cierran apps para ahorrar " +
                     "batería. En la información de la app activa \"Inicio automático\" y pon " +
                     "\"Ahorro de batería\" en \"Sin restricciones\".",
-                buttonText = "Abrir información de la app",
+                buttonText = "Abrir ajustes de batería",
                 onClick = onOpenAppSettings,
             )
+
+            OutlinedButton(onClick = onShowWelcome, modifier = Modifier.fillMaxWidth()) {
+                Text("Ver la bienvenida otra vez")
+            }
         }
     }
 }

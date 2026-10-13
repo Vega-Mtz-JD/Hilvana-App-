@@ -4,28 +4,31 @@ import android.Manifest
 import android.app.StatusBarManager
 import android.content.ComponentName
 import android.content.Intent
-import android.graphics.drawable.Icon
-import android.widget.Toast
-import androidx.annotation.RequiresApi
-import com.hilvana.app.capture.CaptureTileService
 import android.content.pm.PackageManager
+import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hilvana.app.bubble.BubbleService
+import com.hilvana.app.capture.CaptureTileService
+import com.hilvana.app.data.UserPrefs
 import com.hilvana.app.reminder.ReminderScheduler
 import com.hilvana.app.ui.HilvanaRoot
+import com.hilvana.app.ui.onboarding.BatteryHelp
+import com.hilvana.app.ui.onboarding.OnboardingScreen
 import com.hilvana.app.ui.screens.PermissionsState
 import com.hilvana.app.ui.theme.HilvanaTheme
 
@@ -34,36 +37,68 @@ class MainActivity : ComponentActivity() {
     // Se relee en onResume: el usuario puede regresar de Ajustes con el permiso dado.
     private var permissions by mutableStateOf(PermissionsState())
 
+    private val prefs by lazy { UserPrefs(this) }
+    private var onboardingDone by mutableStateOf(true)
+    private var userName by mutableStateOf("")
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        onboardingDone = prefs.onboardingDone
+        userName = prefs.userName
+
         setContent {
             HilvanaTheme {
                 val bubbleRunning by BubbleService.isRunning.collectAsStateWithLifecycle()
                 val notificationLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestPermission()
                 ) { refreshPermissions() }
+                val requestNotifications = {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
 
-                HilvanaRoot(
-                    permissions = permissions,
-                    bubbleRunning = bubbleRunning,
-                    onRequestOverlay = ::openOverlaySettings,
-                    onRequestNotifications = {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        }
-                    },
-                    onRequestExactAlarms = ::openExactAlarmSettings,
-                    onOpenAppSettings = ::openAppDetails,
-                    onToggleBubble = {
-                        if (bubbleRunning) BubbleService.stop(this) else BubbleService.start(this)
-                    },
-                    onAddCaptureTile = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        ::requestAddCaptureTile
-                    } else {
-                        null
-                    },
-                )
+                if (!onboardingDone) {
+                    OnboardingScreen(
+                        permissions = permissions,
+                        initialName = userName,
+                        onRequestOverlay = ::openOverlaySettings,
+                        onRequestNotifications = requestNotifications,
+                        onRequestExactAlarms = ::openExactAlarmSettings,
+                        onOpenAutostart = { BatteryHelp.openAutostart(this) },
+                        onOpenAppDetails = ::openAppDetails,
+                        onFinish = { name, showBubble ->
+                            prefs.userName = name
+                            prefs.onboardingDone = true
+                            userName = prefs.userName
+                            onboardingDone = true
+                            if (showBubble && !bubbleRunning) BubbleService.start(this)
+                        },
+                    )
+                } else {
+                    HilvanaRoot(
+                        permissions = permissions,
+                        bubbleRunning = bubbleRunning,
+                        userName = userName,
+                        onRequestOverlay = ::openOverlaySettings,
+                        onRequestNotifications = requestNotifications,
+                        onRequestExactAlarms = ::openExactAlarmSettings,
+                        onOpenAppSettings = { BatteryHelp.openAutostart(this) },
+                        onToggleBubble = {
+                            if (bubbleRunning) BubbleService.stop(this) else BubbleService.start(this)
+                        },
+                        onAddCaptureTile = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            ::requestAddCaptureTile
+                        } else {
+                            null
+                        },
+                        onShowWelcome = {
+                            prefs.onboardingDone = false
+                            onboardingDone = false
+                        },
+                    )
+                }
             }
         }
     }

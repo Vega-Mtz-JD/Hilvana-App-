@@ -87,6 +87,31 @@
                 android:value="Floating capture bubble shown over other apps so the user can save notes and reminders instantly" />
         </service>
 
+        <!-- Widgets (Jetpack Glance) -->
+        <receiver
+            android:name=".widget.QuickCaptureWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_quick_capture_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_quick_capture_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.MyDayWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_my_day_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_my_day_info" />
+        </receiver>
+
         <receiver
             android:name=".reminder.ReminderReceiver"
             android:exported="false" />
