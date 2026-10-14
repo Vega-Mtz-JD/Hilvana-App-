@@ -44,6 +44,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hilvana.app.data.Item
 import com.hilvana.app.data.ItemType
 import com.hilvana.app.ui.screens.CalendarScreen
+import com.hilvana.app.ui.stats.StatsScreen
 import com.hilvana.app.ui.screens.InboxScreen
 import java.time.LocalDate
 import java.time.ZoneId
@@ -100,6 +101,7 @@ fun HilvanaRoot(
     else allItems.filter { it.folderId == null || it.folderId !in lockedFolderIds }
     var tab by rememberSaveable { mutableStateOf(Tab.TODAY) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
+    var showStats by rememberSaveable { mutableStateOf(false) }
     var openFolderId by rememberSaveable { mutableStateOf<Long?>(null) }
     var selectedDate by rememberSaveable { mutableStateOf(LocalDate.now()) }
     var editing by remember { mutableStateOf<Item?>(null) }
@@ -112,12 +114,19 @@ fun HilvanaRoot(
     val folderOpen = tab == Tab.NOTES && openFolderId != null
 
     // "Atrás": cierra Ajustes, luego la carpeta abierta, luego regresa a Hoy antes de salir.
-    BackHandler(enabled = showSettings || folderOpen || tab != Tab.TODAY) {
+    BackHandler(enabled = showSettings || showStats || folderOpen || tab != Tab.TODAY) {
         when {
             showSettings -> showSettings = false
+            showStats -> showStats = false
             folderOpen -> openFolderId = null
             else -> tab = Tab.TODAY
         }
+    }
+
+    if (showStats) {
+        // Con la app bloqueada no cuenta lo de carpetas protegidas (usa la lista ya filtrada).
+        StatsScreen(items = items, folders = folders, onBack = { showStats = false })
+        return
     }
 
     if (showSettings) {
@@ -161,6 +170,9 @@ fun HilvanaRoot(
                     )
                 },
                 actions = {
+                    IconButton(onClick = { showStats = true }) {
+                        Text("📊", style = MaterialTheme.typography.titleLarge)
+                    }
                     IconButton(onClick = { showSettings = true }) {
                         if (permissions.allGranted) {
                             Icon(Icons.Filled.Settings, contentDescription = "Ajustes")

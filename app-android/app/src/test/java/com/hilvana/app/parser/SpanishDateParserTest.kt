@@ -73,6 +73,35 @@ class SpanishDateParserTest {
         assertEquals("https://youtu.be/abc123", result.textAfterPrefix)
     }
 
+    private fun priorityOf(input: String) = SpanishDateParser.parse(input, now)
+
+    @Test fun urgenteEsCincoEstrellas() {
+        val r = priorityOf("pagar luz urgente")
+        assertEquals(5, r.priority)
+        assertEquals("Pagar luz", r.text)
+    }
+
+    @Test fun importanteEsCuatroYConFecha() {
+        val r = priorityOf("mañana importante revisar contrato")
+        assertEquals(4, r.priority)
+        assertEquals("Revisar contrato", r.text)
+        assertEquals(at(10, 13, 9), r.dueAt)
+    }
+
+    @Test fun muyImportanteEsCinco() = assertEquals(5, priorityOf("muy importante: llamar al banco").priority)
+
+    @Test fun signosDeExclamacion() {
+        val r = priorityOf("llamar al banco!!!")
+        assertEquals(3, r.priority)
+        assertEquals("Llamar al banco", r.text)
+    }
+
+    @Test fun unSoloSignoPegadoNoEsImportancia() {
+        val r = priorityOf("qué buena idea!")
+        assertNull(r.priority)
+        assertEquals("Qué buena idea!", r.text)
+    }
+
     @Test fun losEnlacesNoSonFechas() =
         check("video https://tiktok.com/@ana/video/12/10", "Video https://tiktok.com/@ana/video/12/10", null)
 }

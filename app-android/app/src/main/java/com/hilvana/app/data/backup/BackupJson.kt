@@ -3,6 +3,7 @@ package com.hilvana.app.data.backup
 import com.hilvana.app.data.Folder
 import com.hilvana.app.data.Item
 import com.hilvana.app.data.ItemType
+import com.hilvana.app.data.MAX_PRIORITY
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -46,6 +47,8 @@ object BackupJson {
                     .put("createdAt", item.createdAt)
                     .put("folderId", item.folderId ?: JSONObject.NULL)
                     .put("image", item.imagePath?.let { File(it).name } ?: JSONObject.NULL)
+                    .put("priority", item.priority)
+                    .put("completedAt", item.completedAt ?: JSONObject.NULL)
             }))
         return json.toString(2)
     }
@@ -79,6 +82,8 @@ object BackupJson {
                     dueAt = i.optLongOrNull("dueAt"),
                     createdAt = i.optLong("createdAt", System.currentTimeMillis()),
                     folderId = i.optLongOrNull("folderId"),
+                    priority = i.optInt("priority", 0).coerceIn(0, MAX_PRIORITY),
+                    completedAt = i.optLongOrNull("completedAt"),
                 ),
                 imageName = i.optStringOrNull("image"),
             )

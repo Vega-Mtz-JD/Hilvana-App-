@@ -56,7 +56,9 @@ import com.hilvana.app.parser.SpanishDateParser
 import com.hilvana.app.reminder.QuickTime
 import androidx.compose.foundation.BorderStroke
 import com.hilvana.app.ui.components.ItemImage
+import com.hilvana.app.ui.components.StarRating
 import com.hilvana.app.ui.components.TypeSelector
+import com.hilvana.app.ui.components.starsText
 import com.hilvana.app.ui.components.color
 import com.hilvana.app.ui.components.prompt
 import com.hilvana.app.ui.formatDue
@@ -77,7 +79,7 @@ fun CaptureContent(
     imagePath: String?,
     onImageChange: (String?) -> Unit,
     onPickImage: (currentText: String) -> Unit,
-    onSave: (text: String, type: ItemType, dueAt: Long?, folderId: Long?) -> Unit,
+    onSave: (text: String, type: ItemType, dueAt: Long?, folderId: Long?, priority: Int) -> Unit,
     onDismiss: () -> Unit,
     initialText: String = "",
 ) {
@@ -90,6 +92,7 @@ fun CaptureContent(
     var selectedFolderId by remember { mutableStateOf<Long?>(null) }
     var quickTime by remember { mutableStateOf<QuickTime?>(null) }
     var customDue by remember { mutableStateOf<Long?>(null) }
+    var manualPriority by remember { mutableStateOf<Int?>(null) }
     var ignoreDetection by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val clipKind = remember { ClipboardReader.peekKind(context) }
@@ -100,10 +103,17 @@ fun CaptureContent(
     // y "links: https://…" → Nota en la carpeta Links (si existe).
     val parsed = remember(text) { SpanishDateParser.parse(text) }
     val prefixFolder = if (ignoreDetection) null else parsed.prefix?.let { p -> folders.firstOrNull { it.matches(p) } }
-    val detected = parsed.takeIf { !ignoreDetection && (it.type != null || prefixFolder != null) }
+    val detected = parsed.takeIf {
+        !ignoreDetection && (it.type != null || prefixFolder != null || it.priority != null)
+    }
     val detectedDue = detected?.dueAtMillis()
+    val detectedPriority = detected?.priority
     // Lo que el usuario elige a mano siempre gana sobre lo detectado.
-    val effectiveType = selectedType ?: detected?.type ?: if (prefixFolder != null) ItemType.NOTE else null
+    val effectiveType = selectedType ?: detected?.type ?: when {
+        prefixFolder != null -> ItemType.NOTE
+        detectedPriority != null -> ItemType.TASK // "pagar luz urgente" suena a tarea
+        else -> null
+    }
     val isReminder = effectiveType == ItemType.REMINDER
     val isNote = (effectiveType ?: ItemType.NOTE) == ItemType.NOTE
     val effectiveFolder = if (!isNote) null
@@ -114,6 +124,10 @@ fun CaptureContent(
         (selectedType == null || selectedType == detected.type)
     val reminderDue = if (isReminder) quickTime?.toMillis() ?: customDue ?: detectedDue else null
     val shownType = effectiveType ?: ItemType.NOTE
+    val canHavePriority = shownType != ItemType.NOTE
+    val priority = if (canHavePriority) manualPriority ?: detectedPriority ?: 0 else 0
+    // Si se usó la importancia escrita ("urgente", "!!!"), esas palabras no quedan en el texto.
+    val usesPriorityWords = canHavePriority && manualPriority == null && detectedPriority != null
 
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
@@ -219,6 +233,7 @@ fun CaptureContent(
                             Text(
                                 text = buildString {
                                     append("✨ ")
+                                    if (detectedPriority != null) append(starsText(detectedPriority)).append(" ")
                                     if (detectedDue != null) {
                                         append("⏰ ").append(formatDue(detectedDue))
                                         if (detected.text.isNotBlank()) append(" · ").append(detected.text)
@@ -227,6 +242,8 @@ fun CaptureContent(
                                         if (detected.textAfterPrefix.isNotBlank()) {
                                             append(" · ").append(detected.textAfterPrefix)
                                         }
+                                    } else if (detected.text.isNotBlank()) {
+                                        append(detected.text)
                                     }
                                 },
                                 maxLines = 1,
@@ -256,6 +273,11 @@ fun CaptureContent(
                             )
                         }
                     }
+                }
+
+                if (canHavePriority) {
+                    Text("Importancia", style = MaterialTheme.typography.labelLarge)
+                    StarRating(priority = priority, onChange = { manualPriority = it })
                 }
 
                 if (shownType == ItemType.TASK) {
@@ -293,10 +315,10 @@ fun CaptureContent(
                         onClick = {
                             val finalText = when {
                                 usesPrefix -> parsed.textAfterPrefix
-                                usesDetection -> parsed.text
+                                usesDetection || usesPriorityWords -> parsed.text
                                 else -> text.trim()
                             }.ifBlank { text.trim() }.ifBlank { "📷 Imagen" }
-                            onSave(finalText, effectiveType ?: ItemType.NOTE, reminderDue, effectiveFolder?.id)
+                            onSave(finalText, shownType, reminderDue, effectiveFolder?.id, priority)
                         },
                         // Con imagen se puede guardar sin texto; un recordatorio necesita hora.
                         enabled = (text.isNotBlank() || imagePath != null) && (!isReminder || reminderDue != null),

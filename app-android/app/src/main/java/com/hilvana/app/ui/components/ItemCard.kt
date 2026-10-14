@@ -70,14 +70,23 @@ fun ItemCard(
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Text(
-                    text = buildString {
-                        append(folder?.label ?: "${item.type.emoji} ${item.type.label}")
-                        item.dueAt?.let { append(" · ⏰ ").append(formatDue(it)) }
-                    },
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (item.priority > 0) {
+                        Text(
+                            starsText(item.priority) + " ",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = StarColor,
+                        )
+                    }
+                    Text(
+                        text = buildString {
+                            append(folder?.label ?: "${item.type.emoji} ${item.type.label}")
+                            item.dueAt?.let { append(" · ⏰ ").append(formatDue(it)) }
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             item.imagePath?.let { path ->
                 ItemImage(

@@ -21,7 +21,7 @@ import com.hilvana.app.data.ItemType
 
 /**
  * Tareas: cosas por hacer sin importar cuándo (los recordatorios van al Calendario).
- * Pendientes arriba (las que tienen fecha primero), completadas abajo.
+ * Pendientes arriba (más estrellas primero), completadas abajo.
  */
 @Composable
 fun TasksScreen(
@@ -32,8 +32,9 @@ fun TasksScreen(
 ) {
     var showCompleted by rememberSaveable { mutableStateOf(false) }
     val tasks = items.filter { it.type == ItemType.TASK }
+    // Lo más importante primero; a igual importancia, lo que vence antes.
     val pending = tasks.filter { !it.done }
-        .sortedWith(compareBy(nullsLast()) { it.dueAt })
+        .sortedWith(compareByDescending<Item> { it.priority }.thenBy(nullsLast()) { it.dueAt })
     val completed = tasks.filter { it.done }
 
     LazyColumn(

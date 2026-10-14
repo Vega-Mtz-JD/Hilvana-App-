@@ -1,5 +1,6 @@
 package com.hilvana.app.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -32,4 +33,10 @@ data class Item(
     val folderId: Long? = null,
     /** Imagen adjunta guardada por [ImageStore] (foto o captura), si tiene. */
     val imagePath: String? = null,
+    /** Importancia de 0 (sin marcar) a 5 estrellas. */
+    @ColumnInfo(defaultValue = "0") val priority: Int = 0,
+    /** Cuándo se marcó como hecho (para las estadísticas); null si está pendiente. */
+    val completedAt: Long? = null,
 )
+
+const val MAX_PRIORITY = 5

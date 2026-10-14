@@ -56,6 +56,8 @@ import com.hilvana.app.data.ImageStore
 import com.hilvana.app.data.Item
 import com.hilvana.app.ui.components.ImageViewer
 import com.hilvana.app.ui.components.ItemImage
+import androidx.compose.runtime.mutableIntStateOf
+import com.hilvana.app.ui.components.StarRating
 import com.hilvana.app.ui.components.TypeSelector
 import com.hilvana.app.ui.components.prompt
 import kotlinx.coroutines.launch
@@ -83,6 +85,7 @@ fun ItemEditorSheet(
     var dueAt by rememberSaveable { mutableStateOf(item.dueAt) }
     var done by rememberSaveable { mutableStateOf(item.done) }
     var folderId by rememberSaveable { mutableStateOf(item.folderId) }
+    var priority by rememberSaveable { mutableIntStateOf(item.priority) }
     var imagePath by rememberSaveable { mutableStateOf(item.imagePath) }
     var showImage by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
@@ -189,6 +192,9 @@ fun ItemEditorSheet(
             }
 
             if (canHaveDate) {
+                Text("Importancia", style = MaterialTheme.typography.labelLarge)
+                StarRating(priority = priority, onChange = { priority = it })
+
                 Text("Fecha y hora", style = MaterialTheme.typography.labelLarge)
                 Text(
                     text = dueAt?.let { "⏰ " + formatDue(it) }
@@ -248,6 +254,7 @@ fun ItemEditorSheet(
                                 dueAt = if (canHaveDate) dueAt else null,
                                 done = canHaveDate && done,
                                 folderId = if (type == ItemType.NOTE) folderId else null,
+                                priority = if (canHaveDate) priority else 0,
                             )
                         )
                     },

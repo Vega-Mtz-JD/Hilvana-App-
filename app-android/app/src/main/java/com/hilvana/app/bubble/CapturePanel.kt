@@ -19,6 +19,16 @@ import com.hilvana.app.data.ItemType
 import com.hilvana.app.repository
 import com.hilvana.app.ui.theme.HilvanaTheme
 
+/** Lo que se guarda desde el panel de la burbuja. */
+data class Captured(
+    val text: String,
+    val type: ItemType,
+    val dueAt: Long?,
+    val folderId: Long?,
+    val imagePath: String?,
+    val priority: Int,
+)
+
 /**
  * Mini-panel de captura que se abre al tocar la burbuja, encima de la app actual.
  * Es una ventana superpuesta (no una Activity) para no depender del permiso de
@@ -27,7 +37,7 @@ import com.hilvana.app.ui.theme.HilvanaTheme
 class CapturePanel(
     private val context: Context,
     private val windowManager: WindowManager,
-    private val onSave: (text: String, type: ItemType, dueAt: Long?, folderId: Long?, imagePath: String?) -> Unit,
+    private val onSave: (Captured) -> Unit,
     private val onClosed: () -> Unit,
 ) {
     private var root: FrameLayout? = null
@@ -51,8 +61,8 @@ class CapturePanel(
                         imagePath = imagePath,
                         onImageChange = ::replaceImage,
                         onPickImage = ::pickImageInActivity,
-                        onSave = { text, type, dueAt, folderId ->
-                            onSave(text, type, dueAt, folderId, imagePath)
+                        onSave = { text, type, dueAt, folderId, priority ->
+                            onSave(Captured(text, type, dueAt, folderId, imagePath, priority))
                             imagePath = null // ahora es de la nota guardada
                             dismiss()
                         },

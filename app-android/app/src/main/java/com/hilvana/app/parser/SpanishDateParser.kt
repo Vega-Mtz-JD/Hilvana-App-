@@ -23,6 +23,8 @@ data class ParseResult(
     val type: ItemType?,
     val prefix: String? = null,
     val textAfterPrefix: String = text,
+    /** Importancia detectada ("urgente" → 5, "importante" → 4, "!!!" → 3); null si no hay. */
+    val priority: Int? = null,
 ) {
     fun dueAtMillis(zone: ZoneId = ZoneId.systemDefault()): Long? =
         dueAt?.atZone(zone)?.toInstant()?.toEpochMilli()
@@ -95,6 +97,10 @@ object SpanishDateParser {
     private val EL_DAY = Regex("${B}el\\s+(\\d{1,2})$E")
     private val URL = Regex("(?:https?://|www\\.)\\S+")
 
+    /** "urgente", "muy importante", "importante" o signos "!!!" (uno suelto o de 2 a 5 seguidos). */
+    private val PRIORITY_WORD = Regex("$B(urgente|muy\\s+importante|importante)$E")
+    private val PRIORITY_BANGS = Regex("(?<!!)(!{2,5})(?!!)|(?<!\\S)!(?!\\S)")
+
     /** "links: …", "mis ideas: …" (letras y espacios, hasta 20, antes de ":"). */
     private val PREFIX = Regex("^(\\p{L}[\\p{L} ]{0,19}?)\\s*:\\s+")
 
@@ -109,10 +115,14 @@ object SpanishDateParser {
             findAll(lower).firstOrNull { m -> (taken + links).none { it.overlaps(m.range) } }
                 ?.also { taken += it.range }
 
+        // 0) Importancia: palabra o signos de exclamación.
+        val priority = PRIORITY_WORD.findFree()?.let { if (it.groupValues[1] == "importante") 4 else 5 }
+            ?: PRIORITY_BANGS.findFree()?.let { it.value.length.coerceIn(1, 5) }
+
         // 1) "en 10 minutos", "dentro de 2 horas": se calcula desde ahora y listo.
         RELATIVE.findFree()?.let { m ->
             val dueAt = relative(now, m.groupValues[1], m.groupValues[2])
-            if (dueAt != null) return result(input, taken, dueAt)
+            if (dueAt != null) return result(input, taken, dueAt, priority)
             taken.remove(m.range)
         }
 
@@ -212,7 +222,7 @@ object SpanishDateParser {
         }
 
         if (date == null && hour == null && period == null) {
-            return result(input, taken, null)
+            return result(input, taken, null, priority)
         }
 
         // 5) Combinar. "a las 5" sin am/pm: de 1 a 7 se entiende de la tarde.
@@ -230,7 +240,7 @@ object SpanishDateParser {
         // Solo hora y ya pasó: se entiende mañana.
         if (date == null && !dueAt.isAfter(now)) dueAt = dueAt.plusDays(1)
 
-        return result(input, taken, dueAt)
+        return result(input, taken, dueAt, priority)
     }
 
     private fun relative(now: LocalDateTime, amountText: String, unit: String): LocalDateTime? {
@@ -254,7 +264,7 @@ object SpanishDateParser {
         return if (year == null && candidate.isBefore(today)) candidate.plusYears(1) else candidate
     }
 
-    private fun result(input: String, taken: List<IntRange>, dueAt: LocalDateTime?): ParseResult {
+    private fun result(input: String, taken: List<IntRange>, dueAt: LocalDateTime?, priority: Int?): ParseResult {
         val builder = StringBuilder(input)
         taken.sortedByDescending { it.first }.forEach { builder.delete(it.first, it.last + 1) }
         val text = tidy(builder.toString())
@@ -265,6 +275,7 @@ object SpanishDateParser {
             type = if (dueAt != null) ItemType.REMINDER else null,
             prefix = prefixMatch?.groupValues?.get(1)?.trim(),
             textAfterPrefix = prefixMatch?.let { tidy(text.substring(it.range.last + 1)) } ?: text,
+            priority = priority,
         )
     }
 

@@ -28,8 +28,14 @@ class ItemRepository(
     }
 
     /** Inserta (id = 0) o actualiza el elemento. Devuelve su id. */
-    suspend fun save(item: Item): Long {
-        val previous = if (item.id == 0L) null else dao.getById(item.id)
+    suspend fun save(original: Item): Long {
+        val previous = if (original.id == 0L) null else dao.getById(original.id)
+        // Fecha de completado: se anota al marcar como hecho y se borra al desmarcar.
+        val item = when {
+            !original.done -> original.copy(completedAt = null)
+            original.completedAt == null -> original.copy(completedAt = previous?.completedAt ?: System.currentTimeMillis())
+            else -> original
+        }
         val id = if (item.id == 0L) dao.insert(item) else item.id.also { dao.update(item) }
         syncAlarm(item.copy(id = id))
         // Si cambió o se quitó la imagen, la anterior ya no la usa nadie.

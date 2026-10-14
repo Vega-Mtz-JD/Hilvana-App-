@@ -20,10 +20,18 @@ suspend fun saveCapture(
     dueAt: Long?,
     folderId: Long?,
     imagePath: String? = null,
+    priority: Int = 0,
 ) {
     val app = context.applicationContext
     app.repository.save(
-        Item(text = text, type = type, dueAt = dueAt, folderId = folderId, imagePath = imagePath)
+        Item(
+            text = text,
+            type = type,
+            dueAt = dueAt,
+            folderId = folderId,
+            imagePath = imagePath,
+            priority = priority,
+        )
     )
 
     val message = if (dueAt == null) {

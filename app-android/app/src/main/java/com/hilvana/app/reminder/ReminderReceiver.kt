@@ -59,10 +59,12 @@ class ReminderReceiver : BroadcastReceiver() {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(openApp)
             .setAutoCancel(true)
+            .addAction(0, "Posponer 15 min", ReminderActionReceiver.snoozeIntent(context, item.id))
+            .addAction(0, "✓ Hecho", ReminderActionReceiver.doneIntent(context, item.id))
             .build()
 
         try {
-            notifications.notify(NOTIFICATION_ID_OFFSET + item.id.toInt(), notification)
+            notifications.notify(notificationId(item.id), notification)
         } catch (_: SecurityException) {
             // El usuario quitó el permiso de notificaciones justo ahora.
         }
@@ -73,5 +75,7 @@ class ReminderReceiver : BroadcastReceiver() {
         private const val CHANNEL_ID = "reminders"
         // Evita chocar con el id 1 de la notificación de la burbuja.
         private const val NOTIFICATION_ID_OFFSET = 1000
+
+        fun notificationId(itemId: Long): Int = NOTIFICATION_ID_OFFSET + itemId.toInt()
     }
 }

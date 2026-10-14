@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,12 +31,19 @@ val ItemType.emoji: String
         ItemType.REMINDER -> "⏰"
     }
 
-/** Color de cada tipo (tonos medios: se leen en modo claro y oscuro). */
+/**
+ * Color de cada tipo, igual en la app y en las estadísticas. Es un trío ya
+ * validado para daltonismo (los tres se distinguen entre sí en modo claro y
+ * oscuro); en modo oscuro se usa su tono pensado para fondo oscuro.
+ */
 val ItemType.color: Color
-    get() = when (this) {
-        ItemType.NOTE -> Color(0xFFF9A825)
-        ItemType.TASK -> Color(0xFF43A047)
-        ItemType.REMINDER -> Color(0xFF1E88E5)
+    @Composable get() {
+        val dark = isSystemInDarkTheme()
+        return when (this) {
+            ItemType.NOTE -> if (dark) Color(0xFFD95926) else Color(0xFFEB6834) // naranja
+            ItemType.TASK -> if (dark) Color(0xFF199E70) else Color(0xFF1BAF7A) // aqua
+            ItemType.REMINDER -> if (dark) Color(0xFF3987E5) else Color(0xFF2A78D6) // azul
+        }
     }
 
 /** Pregunta del campo de texto según lo que se va a guardar. */

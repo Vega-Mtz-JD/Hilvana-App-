@@ -16,12 +16,12 @@ class BackupTest {
     )
     private val items = listOf(
         Item(id = 10, text = "App de recetas", type = ItemType.NOTE, createdAt = 1_000, folderId = 1, inInbox = false),
-        Item(id = 11, text = "Llamar a mamá", type = ItemType.REMINDER, dueAt = 5_000, createdAt = 2_000),
+        Item(id = 11, text = "Llamar a mamá", type = ItemType.REMINDER, dueAt = 5_000, createdAt = 2_000, priority = 4),
         Item(
             id = 12, text = "Captura", type = ItemType.NOTE, createdAt = 3_000, done = false,
             imagePath = "/data/user/0/com.hilvana.app/files/images/abc.jpg",
         ),
-        Item(id = 13, text = "Pagar luz", type = ItemType.TASK, createdAt = 4_000, done = true),
+        Item(id = 13, text = "Pagar luz", type = ItemType.TASK, createdAt = 4_000, done = true, priority = 5, completedAt = 4_500),
     )
 
     @Test fun idaYVueltaConservaTodo() {
