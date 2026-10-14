@@ -25,6 +25,10 @@ import androidx.compose.ui.unit.dp
 import com.hilvana.app.data.Folder
 import com.hilvana.app.data.Item
 import com.hilvana.app.data.progressText
+import com.hilvana.app.ui.search.SearchEngine
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import com.hilvana.app.ui.formatDue
 import com.hilvana.app.ui.isActionable
 
@@ -39,8 +43,25 @@ fun ItemCard(
     modifier: Modifier = Modifier,
     onToggleDone: (() -> Unit)? = null,
     folder: Folder? = null,
+    /** Palabras a resaltar en el texto (resultados de búsqueda). */
+    highlight: String? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
+    val highlightColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+    val displayText = remember(item.text, highlight) {
+        buildAnnotatedString {
+            append(item.text)
+            if (!highlight.isNullOrBlank()) {
+                SearchEngine.highlightRanges(item.text, highlight).forEach { range ->
+                    addStyle(
+                        SpanStyle(fontWeight = FontWeight.Bold, background = highlightColor),
+                        range.first,
+                        range.last + 1,
+                    )
+                }
+            }
+        }
+    }
     val showCheckbox = item.type.isActionable && onToggleDone != null
     val link = remember(item.text) { LINK.find(item.text)?.value }
     val uriHandler = LocalUriHandler.current
@@ -60,7 +81,7 @@ fun ItemCard(
                     .padding(vertical = 4.dp),
             ) {
                 Text(
-                    text = item.text,
+                    text = displayText,
                     style = MaterialTheme.typography.bodyLarge,
                     textDecoration = if (item.done) TextDecoration.LineThrough else null,
                     color = if (item.done) {

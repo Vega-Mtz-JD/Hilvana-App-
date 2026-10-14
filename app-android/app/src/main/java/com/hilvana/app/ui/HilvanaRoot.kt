@@ -13,6 +13,8 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Search
+import com.hilvana.app.ui.search.SearchScreen
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -103,6 +105,7 @@ fun HilvanaRoot(
     var tab by rememberSaveable { mutableStateOf(Tab.TODAY) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
     var showStats by rememberSaveable { mutableStateOf(false) }
+    var showSearch by rememberSaveable { mutableStateOf(false) }
     var openFolderId by rememberSaveable { mutableStateOf<Long?>(null) }
     var selectedDate by rememberSaveable { mutableStateOf(LocalDate.now()) }
     var editing by remember { mutableStateOf<Item?>(null) }
@@ -115,13 +118,49 @@ fun HilvanaRoot(
     val folderOpen = tab == Tab.NOTES && openFolderId != null
 
     // "Atrás": cierra Ajustes, luego la carpeta abierta, luego regresa a Hoy antes de salir.
-    BackHandler(enabled = showSettings || showStats || folderOpen || tab != Tab.TODAY) {
+    BackHandler(enabled = showSettings || showStats || showSearch || folderOpen || tab != Tab.TODAY) {
         when {
             showSettings -> showSettings = false
             showStats -> showStats = false
+            showSearch -> showSearch = false
             folderOpen -> openFolderId = null
             else -> tab = Tab.TODAY
         }
+    }
+
+    // El editor se puede abrir desde las pantallas normales y desde la búsqueda.
+    val editorHost: @Composable () -> Unit = {
+        editing?.let { item ->
+            ItemEditorSheet(
+                item = item,
+                folders = folders,
+                otherPinnedCount = allItems.count { it.pinned && !it.done && it.id != item.id },
+                nudgeHours = nudgeHours,
+                onNudgeHoursChange = viewModel::setNudgeHours,
+                onDismiss = { editing = null },
+                onSave = {
+                    viewModel.save(it)
+                    editing = null
+                },
+                onDelete = {
+                    viewModel.delete(it)
+                    editing = null
+                },
+            )
+        }
+    }
+
+    if (showSearch) {
+        // Usa la lista ya filtrada: con la app bloqueada no busca en carpetas protegidas.
+        SearchScreen(
+            items = items,
+            folders = folders,
+            onOpen = { editing = it },
+            onToggleDone = viewModel::toggleDone,
+            onBack = { showSearch = false },
+        )
+        editorHost()
+        return
     }
 
     if (showStats) {
@@ -171,6 +210,9 @@ fun HilvanaRoot(
                     )
                 },
                 actions = {
+                    IconButton(onClick = { showSearch = true }) {
+                        Icon(Icons.Filled.Search, contentDescription = "Buscar")
+                    }
                     IconButton(onClick = { showStats = true }) {
                         Text("📊", style = MaterialTheme.typography.titleLarge)
                     }
@@ -279,24 +321,7 @@ fun HilvanaRoot(
         }
     }
 
-    editing?.let { item ->
-        ItemEditorSheet(
-            item = item,
-            folders = folders,
-            otherPinnedCount = allItems.count { it.pinned && !it.done && it.id != item.id },
-            nudgeHours = nudgeHours,
-            onNudgeHoursChange = viewModel::setNudgeHours,
-            onDismiss = { editing = null },
-            onSave = {
-                viewModel.save(it)
-                editing = null
-            },
-            onDelete = {
-                viewModel.delete(it)
-                editing = null
-            },
-        )
-    }
+    editorHost()
 }
 
 @Composable
