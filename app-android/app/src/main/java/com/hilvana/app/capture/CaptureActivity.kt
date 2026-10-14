@@ -63,9 +63,9 @@ class CaptureActivity : ComponentActivity() {
                     imagePath = imagePath,
                     onImageChange = ::replaceImage,
                     onPickImage = { pickImage.launch(PickVisualMediaRequest(ImageOnly)) },
-                    onSave = { text, type, dueAt, folderId, priority ->
+                    onSave = { text, type, dueAt, folderId, priority, repeat ->
                         lifecycleScope.launch {
-                            saveCapture(this@CaptureActivity, text, type, dueAt, folderId, imagePath, priority)
+                            saveCapture(this@CaptureActivity, text, type, dueAt, folderId, imagePath, priority, repeat)
                             saved = true
                             finish()
                         }

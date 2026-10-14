@@ -57,6 +57,7 @@ import com.hilvana.app.data.Item
 import com.hilvana.app.ui.components.ImageViewer
 import com.hilvana.app.ui.components.ItemImage
 import androidx.compose.runtime.mutableIntStateOf
+import com.hilvana.app.ui.components.RepeatSelector
 import com.hilvana.app.ui.components.StarRating
 import com.hilvana.app.ui.components.TypeSelector
 import com.hilvana.app.ui.components.prompt
@@ -86,6 +87,7 @@ fun ItemEditorSheet(
     var done by rememberSaveable { mutableStateOf(item.done) }
     var folderId by rememberSaveable { mutableStateOf(item.folderId) }
     var priority by rememberSaveable { mutableIntStateOf(item.priority) }
+    var repeat by rememberSaveable { mutableStateOf(item.repeatRule) }
     var imagePath by rememberSaveable { mutableStateOf(item.imagePath) }
     var showImage by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
@@ -213,9 +215,19 @@ fun ItemEditorSheet(
                         AssistChip(onClick = { dueAt = null }, label = { Text("Quitar fecha") })
                     }
                 }
+                // Repetir necesita una fecha de inicio.
+                if (dueAt != null) {
+                    RepeatSelector(repeat = repeat, onChange = { repeat = it })
+                } else {
+                    Text(
+                        "🔁 Para que se repita, primero elige una fecha.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = done, onCheckedChange = { done = it })
-                    Text("Hecho")
+                    Text(if (repeat != null && dueAt != null) "Hecho (pasa a la próxima fecha)" else "Hecho")
                 }
             }
 
@@ -255,6 +267,7 @@ fun ItemEditorSheet(
                                 done = canHaveDate && done,
                                 folderId = if (type == ItemType.NOTE) folderId else null,
                                 priority = if (canHaveDate) priority else 0,
+                                repeatRule = if (canHaveDate && dueAt != null) repeat else null,
                             )
                         )
                     },

@@ -35,6 +35,29 @@ object ReminderScheduler {
         }
     }
 
+    /**
+     * Alarma de "Posponer" aparte de la normal: así, en algo que se repite, posponer
+     * no borra la alarma de la próxima vez.
+     */
+    fun scheduleSnooze(context: Context, itemId: Long, at: Long) {
+        val operation = PendingIntent.getBroadcast(
+            context,
+            itemId.toInt() + SNOOZE_REQUEST_OFFSET,
+            Intent(context, ReminderReceiver::class.java)
+                .putExtra(ReminderReceiver.EXTRA_ITEM_ID, itemId)
+                .putExtra(ReminderReceiver.EXTRA_SNOOZE, true),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val manager = alarmManager(context)
+        if (canScheduleExact(context)) {
+            manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, operation)
+        } else {
+            manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, operation)
+        }
+    }
+
+    private const val SNOOZE_REQUEST_OFFSET = 500_000
+
     fun cancel(context: Context, itemId: Long) {
         alarmManager(context).cancel(pendingIntent(context, itemId))
     }

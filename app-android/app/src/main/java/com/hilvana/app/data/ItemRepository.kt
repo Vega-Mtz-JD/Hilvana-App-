@@ -4,6 +4,8 @@ import android.content.Context
 import com.hilvana.app.reminder.ReminderScheduler
 import com.hilvana.app.widget.refreshWidgets
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * Único lugar para guardar, cambiar o borrar elementos. Mantiene las alarmas
@@ -31,10 +33,24 @@ class ItemRepository(
     suspend fun save(original: Item): Long {
         val previous = if (original.id == 0L) null else dao.getById(original.id)
         // Fecha de completado: se anota al marcar como hecho y se borra al desmarcar.
-        val item = when {
+        var item = when {
             !original.done -> original.copy(completedAt = null)
             original.completedAt == null -> original.copy(completedAt = previous?.completedAt ?: System.currentTimeMillis())
             else -> original
+        }
+        // Se repite y se acaba de completar: queda un registro hecho (para historial y
+        // estadísticas) y el original sigue pendiente. Si vence hoy o antes, salta a la
+        // próxima fecha; si ya está en el futuro (un recordatorio que sonó ya saltó), se queda.
+        val rule = item.repeatRule
+        val dueAt = item.dueAt
+        if (rule != null && dueAt != null && item.done && previous != null && !previous.done) {
+            dao.insert(item.copy(id = 0, repeatRule = null, imagePath = null, inInbox = false))
+            val endOfToday = startOfTomorrow()
+            item = item.copy(
+                done = false,
+                completedAt = null,
+                dueAt = if (dueAt < endOfToday) nextOccurrenceMillis(rule, dueAt) else dueAt,
+            )
         }
         val id = if (item.id == 0L) dao.insert(item) else item.id.also { dao.update(item) }
         syncAlarm(item.copy(id = id))
@@ -51,6 +67,11 @@ class ItemRepository(
         dao.delete(item)
         ImageStore.delete(item.imagePath)
         refreshWidgets(context)
+    }
+
+    private fun startOfTomorrow(): Long {
+        val zone = ZoneId.systemDefault()
+        return LocalDate.now(zone).plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
     }
 
     private fun syncAlarm(item: Item) {

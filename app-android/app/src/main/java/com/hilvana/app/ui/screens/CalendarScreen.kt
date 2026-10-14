@@ -47,6 +47,7 @@ import com.hilvana.app.ui.components.ItemCard
 import com.hilvana.app.ui.components.SectionHeader
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -59,6 +60,26 @@ private val WEEKDAY_INITIALS = listOf("L", "M", "X", "J", "V", "S", "D")
 /** Día (local) en que vence un elemento, o null si no tiene fecha. */
 fun Item.dueDate(zone: ZoneId = ZoneId.systemDefault()): LocalDate? =
     dueAt?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalDate() }
+
+/**
+ * Elementos por día. Lo que se repite aparece también en sus próximas fechas
+ * (hasta un año), aunque en la base de datos solo se guarda la siguiente.
+ */
+private fun itemsByDate(items: List<Item>, zone: ZoneId = ZoneId.systemDefault()): Map<LocalDate, List<Item>> {
+    val horizon = LocalDate.now(zone).plusYears(1)
+    val map = mutableMapOf<LocalDate, MutableList<Item>>()
+    items.filter { it.dueAt != null && it.type != ItemType.NOTE }.forEach { item ->
+        val rule = item.repeatRule
+        val days = if (rule != null && !item.done) {
+            val start = LocalDateTime.ofInstant(Instant.ofEpochMilli(item.dueAt!!), zone)
+            rule.occurrences(start, until = horizon, max = 400)
+        } else {
+            listOf(item.dueDate(zone)!!)
+        }
+        days.forEach { map.getOrPut(it) { mutableListOf() } += item }
+    }
+    return map
+}
 
 /**
  * Calendario del mes: los días con recordatorios o tareas se colorean y, al tocar
@@ -75,9 +96,7 @@ fun CalendarScreen(
 ) {
     var month by rememberSaveable { mutableStateOf(YearMonth.from(selectedDate)) }
     val today = LocalDate.now()
-    val byDate = remember(items) {
-        items.filter { it.dueAt != null && it.type != ItemType.NOTE }.groupBy { it.dueDate()!! }
-    }
+    val byDate = remember(items) { itemsByDate(items) }
     val dayItems = byDate[selectedDate].orEmpty().sortedBy { it.dueAt }
 
     LazyColumn(

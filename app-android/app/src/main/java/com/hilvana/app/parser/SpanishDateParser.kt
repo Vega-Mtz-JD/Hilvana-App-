@@ -1,6 +1,7 @@
 package com.hilvana.app.parser
 
 import com.hilvana.app.data.ItemType
+import com.hilvana.app.data.RepeatRule
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -25,6 +26,8 @@ data class ParseResult(
     val textAfterPrefix: String = text,
     /** Importancia detectada ("urgente" → 5, "importante" → 4, "!!!" → 3); null si no hay. */
     val priority: Int? = null,
+    /** Repetición detectada ("todos los días", "cada lunes", "cada mes"…); null si no hay. */
+    val repeat: RepeatRule? = null,
 ) {
     fun dueAtMillis(zone: ZoneId = ZoneId.systemDefault()): Long? =
         dueAt?.atZone(zone)?.toInstant()?.toEpochMilli()
@@ -101,6 +104,16 @@ object SpanishDateParser {
     private val PRIORITY_WORD = Regex("$B(urgente|muy\\s+importante|importante)$E")
     private val PRIORITY_BANGS = Regex("(?<!!)(!{2,5})(?!!)|(?<!\\S)!(?!\\S)")
 
+    // Repetición. ("diario" solo no cuenta: "escribir en mi diario" no es repetición.)
+    private val REPEAT_WEEKDAYS = Regex("$B(?:de\\s+lunes\\s+a\\s+viernes|entre\\s+semana|d[ií]as\\s+h[aá]biles)$E")
+    private val REPEAT_ON_WEEKDAY = Regex(
+        "$B(?:todos\\s+los|cada)\\s+(lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bados?|domingos?)$E"
+    )
+    private val REPEAT_DAILY = Regex("$B(?:todos\\s+los\\s+d[ií]as|cada\\s+d[ií]a|diariamente)$E")
+    private val REPEAT_WEEKLY = Regex("$B(?:todas\\s+las\\s+semanas|cada\\s+semana|semanalmente|semanal)$E")
+    private val REPEAT_MONTHLY = Regex("$B(?:todos\\s+los\\s+meses|cada\\s+mes|mensualmente|mensual)$E")
+    private val REPEAT_YEARLY = Regex("$B(?:todos\\s+los\\s+a[nñ]os|cada\\s+a[nñ]o|anualmente|anual)$E")
+
     /** "links: …", "mis ideas: …" (letras y espacios, hasta 20, antes de ":"). */
     private val PREFIX = Regex("^(\\p{L}[\\p{L} ]{0,19}?)\\s*:\\s+")
 
@@ -119,10 +132,25 @@ object SpanishDateParser {
         val priority = PRIORITY_WORD.findFree()?.let { if (it.groupValues[1] == "importante") 4 else 5 }
             ?: PRIORITY_BANGS.findFree()?.let { it.value.length.coerceIn(1, 5) }
 
+        // 0b) Repetición (antes que los días: "todos los lunes" no es "el lunes").
+        var repeat: RepeatRule? = null
+        var repeatWeekday: DayOfWeek? = null
+        REPEAT_WEEKDAYS.findFree()?.let { repeat = RepeatRule.WEEKDAYS }
+        if (repeat == null) {
+            REPEAT_ON_WEEKDAY.findFree()?.let { m ->
+                repeat = RepeatRule.WEEKLY
+                repeatWeekday = WEEKDAYS[m.groupValues[1]] ?: WEEKDAYS[m.groupValues[1].removeSuffix("s")]
+            }
+        }
+        if (repeat == null) REPEAT_DAILY.findFree()?.let { repeat = RepeatRule.DAILY }
+        if (repeat == null) REPEAT_WEEKLY.findFree()?.let { repeat = RepeatRule.WEEKLY }
+        if (repeat == null) REPEAT_MONTHLY.findFree()?.let { repeat = RepeatRule.MONTHLY }
+        if (repeat == null) REPEAT_YEARLY.findFree()?.let { repeat = RepeatRule.YEARLY }
+
         // 1) "en 10 minutos", "dentro de 2 horas": se calcula desde ahora y listo.
         RELATIVE.findFree()?.let { m ->
             val dueAt = relative(now, m.groupValues[1], m.groupValues[2])
-            if (dueAt != null) return result(input, taken, dueAt, priority)
+            if (dueAt != null) return result(input, taken, dueAt, priority, repeat)
             taken.remove(m.range)
         }
 
@@ -182,6 +210,8 @@ object SpanishDateParser {
 
         // 4) Día.
         val today = now.toLocalDate()
+        // "todos los lunes": el próximo lunes (o hoy si es lunes; si ya pasó la hora, se ajusta abajo).
+        repeatWeekday?.let { date = today.with(TemporalAdjusters.nextOrSame(it)) }
         if (date == null) DAY_AFTER_TOMORROW.findFree()?.let { date = today.plusDays(2) }
         if (date == null) TOMORROW.findFree()?.let { date = today.plusDays(1) }
         if (date == null) TODAY.findFree()?.let { date = today }
@@ -221,7 +251,7 @@ object SpanishDateParser {
             }
         }
 
-        if (date == null && hour == null && period == null) {
+        if (date == null && hour == null && period == null && repeat == null) {
             return result(input, taken, null, priority)
         }
 
@@ -239,8 +269,14 @@ object SpanishDateParser {
         var dueAt = LocalDateTime.of(date ?: today, time)
         // Solo hora y ya pasó: se entiende mañana.
         if (date == null && !dueAt.isAfter(now)) dueAt = dueAt.plusDays(1)
+        repeat?.let { rule ->
+            // Lo que se repite empieza en la próxima vez que toque.
+            if (!dueAt.isAfter(now)) dueAt = rule.nextFuture(dueAt, now)
+            val weekend = dueAt.dayOfWeek == DayOfWeek.SATURDAY || dueAt.dayOfWeek == DayOfWeek.SUNDAY
+            if (rule == RepeatRule.WEEKDAYS && weekend) dueAt = rule.nextAfter(dueAt)
+        }
 
-        return result(input, taken, dueAt, priority)
+        return result(input, taken, dueAt, priority, repeat)
     }
 
     private fun relative(now: LocalDateTime, amountText: String, unit: String): LocalDateTime? {
@@ -264,7 +300,13 @@ object SpanishDateParser {
         return if (year == null && candidate.isBefore(today)) candidate.plusYears(1) else candidate
     }
 
-    private fun result(input: String, taken: List<IntRange>, dueAt: LocalDateTime?, priority: Int?): ParseResult {
+    private fun result(
+        input: String,
+        taken: List<IntRange>,
+        dueAt: LocalDateTime?,
+        priority: Int?,
+        repeat: RepeatRule? = null,
+    ): ParseResult {
         val builder = StringBuilder(input)
         taken.sortedByDescending { it.first }.forEach { builder.delete(it.first, it.last + 1) }
         val text = tidy(builder.toString())
@@ -276,6 +318,7 @@ object SpanishDateParser {
             prefix = prefixMatch?.groupValues?.get(1)?.trim(),
             textAfterPrefix = prefixMatch?.let { tidy(text.substring(it.range.last + 1)) } ?: text,
             priority = priority,
+            repeat = if (dueAt != null) repeat else null,
         )
     }
 

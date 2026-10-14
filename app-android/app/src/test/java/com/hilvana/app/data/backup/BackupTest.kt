@@ -3,6 +3,7 @@ package com.hilvana.app.data.backup
 import com.hilvana.app.data.Folder
 import com.hilvana.app.data.Item
 import com.hilvana.app.data.ItemType
+import com.hilvana.app.data.RepeatRule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
@@ -16,7 +17,10 @@ class BackupTest {
     )
     private val items = listOf(
         Item(id = 10, text = "App de recetas", type = ItemType.NOTE, createdAt = 1_000, folderId = 1, inInbox = false),
-        Item(id = 11, text = "Llamar a mamá", type = ItemType.REMINDER, dueAt = 5_000, createdAt = 2_000, priority = 4),
+        Item(
+            id = 11, text = "Llamar a mamá", type = ItemType.REMINDER, dueAt = 5_000, createdAt = 2_000,
+            priority = 4, repeatRule = RepeatRule.WEEKLY,
+        ),
         Item(
             id = 12, text = "Captura", type = ItemType.NOTE, createdAt = 3_000, done = false,
             imagePath = "/data/user/0/com.hilvana.app/files/images/abc.jpg",

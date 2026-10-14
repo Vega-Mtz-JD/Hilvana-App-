@@ -27,12 +27,16 @@ class ReminderActionReceiver : BroadcastReceiver() {
             try {
                 NotificationManagerCompat.from(context).cancel(ReminderReceiver.notificationId(itemId))
                 val item = context.database.itemDao().getById(itemId) ?: return@launch
-                val updated = when (action) {
-                    ACTION_SNOOZE -> item.copy(dueAt = System.currentTimeMillis() + SNOOZE_MS, done = false)
-                    else -> item.copy(done = true)
+                val snoozeUntil = System.currentTimeMillis() + SNOOZE_MS
+                when {
+                    // Si se repite, posponer no cambia su hora: solo suena otra vez en 15 min
+                    // (si no, "todos los días a las 8" se correría a las 8:15).
+                    action == ACTION_SNOOZE && item.repeatRule != null ->
+                        ReminderScheduler.scheduleSnooze(context, item.id, snoozeUntil)
+                    // El repositorio reprograma (posponer) o cancela/avanza (hecho) la alarma.
+                    action == ACTION_SNOOZE -> context.repository.save(item.copy(dueAt = snoozeUntil, done = false))
+                    else -> context.repository.save(item.copy(done = true))
                 }
-                // El repositorio reprograma (posponer) o cancela (hecho) la alarma.
-                context.repository.save(updated)
             } finally {
                 pending.finish()
             }

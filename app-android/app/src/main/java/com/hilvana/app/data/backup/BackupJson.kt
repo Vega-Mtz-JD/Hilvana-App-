@@ -4,6 +4,7 @@ import com.hilvana.app.data.Folder
 import com.hilvana.app.data.Item
 import com.hilvana.app.data.ItemType
 import com.hilvana.app.data.MAX_PRIORITY
+import com.hilvana.app.data.RepeatRule
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -49,6 +50,7 @@ object BackupJson {
                     .put("image", item.imagePath?.let { File(it).name } ?: JSONObject.NULL)
                     .put("priority", item.priority)
                     .put("completedAt", item.completedAt ?: JSONObject.NULL)
+                    .put("repeat", item.repeatRule?.name ?: JSONObject.NULL)
             }))
         return json.toString(2)
     }
@@ -84,6 +86,9 @@ object BackupJson {
                     folderId = i.optLongOrNull("folderId"),
                     priority = i.optInt("priority", 0).coerceIn(0, MAX_PRIORITY),
                     completedAt = i.optLongOrNull("completedAt"),
+                    repeatRule = i.optStringOrNull("repeat")?.let { name ->
+                        RepeatRule.entries.firstOrNull { it.name == name }
+                    },
                 ),
                 imageName = i.optStringOrNull("image"),
             )

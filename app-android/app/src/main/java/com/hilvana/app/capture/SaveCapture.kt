@@ -4,6 +4,7 @@ import android.content.Context
 import android.widget.Toast
 import com.hilvana.app.data.Item
 import com.hilvana.app.data.ItemType
+import com.hilvana.app.data.RepeatRule
 import com.hilvana.app.reminder.ReminderScheduler
 import com.hilvana.app.repository
 import java.text.DateFormat
@@ -21,6 +22,7 @@ suspend fun saveCapture(
     folderId: Long?,
     imagePath: String? = null,
     priority: Int = 0,
+    repeat: RepeatRule? = null,
 ) {
     val app = context.applicationContext
     app.repository.save(
@@ -31,6 +33,7 @@ suspend fun saveCapture(
             folderId = folderId,
             imagePath = imagePath,
             priority = priority,
+            repeatRule = repeat,
         )
     )
 

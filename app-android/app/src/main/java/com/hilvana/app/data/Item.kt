@@ -37,6 +37,8 @@ data class Item(
     @ColumnInfo(defaultValue = "0") val priority: Int = 0,
     /** Cuándo se marcó como hecho (para las estadísticas); null si está pendiente. */
     val completedAt: Long? = null,
+    /** Cada cuánto se repite (necesita fecha); null = no se repite. */
+    val repeatRule: RepeatRule? = null,
 )
 
 const val MAX_PRIORITY = 5

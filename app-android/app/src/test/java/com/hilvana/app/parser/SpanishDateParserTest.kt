@@ -1,6 +1,7 @@
 package com.hilvana.app.parser
 
 import com.hilvana.app.data.ItemType
+import com.hilvana.app.data.RepeatRule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -100,6 +101,38 @@ class SpanishDateParserTest {
         val r = priorityOf("qué buena idea!")
         assertNull(r.priority)
         assertEquals("Qué buena idea!", r.text)
+    }
+
+    private fun checkRepeat(input: String, text: String, due: LocalDateTime, repeat: RepeatRule) {
+        val r = SpanishDateParser.parse(input, now)
+        assertEquals("texto de \"$input\"", text, r.text)
+        assertEquals("fecha de \"$input\"", due, r.dueAt)
+        assertEquals("repetición de \"$input\"", repeat, r.repeat)
+    }
+
+    // Recordar: "ahora" es lunes 12 de octubre de 2026, 10:00.
+    @Test fun todosLosDias() =
+        checkRepeat("todos los días a las 8 tomar pastilla", "Tomar pastilla", at(10, 13, 8), RepeatRule.DAILY)
+
+    @Test fun todosLosLunesEsHoySiAunNoPasa() =
+        checkRepeat("todos los lunes a las 7 gimnasio", "Gimnasio", at(10, 12, 19), RepeatRule.WEEKLY)
+
+    @Test fun cadaMesElDia5() =
+        checkRepeat("pagar renta cada mes el 5", "Pagar renta", at(11, 5, 9), RepeatRule.MONTHLY)
+
+    @Test fun deLunesAViernes() =
+        checkRepeat("de lunes a viernes a las 9 revisar correo", "Revisar correo", at(10, 13, 9), RepeatRule.WEEKDAYS)
+
+    @Test fun reunionSemanal() =
+        checkRepeat("reunión semanal el viernes a las 10", "Reunión", at(10, 16, 10), RepeatRule.WEEKLY)
+
+    @Test fun cadaDomingoEnPlural() =
+        checkRepeat("todos los domingos llamar a la abuela", "Llamar a la abuela", at(10, 18, 9), RepeatRule.WEEKLY)
+
+    @Test fun miDiarioNoEsRepeticion() {
+        val r = SpanishDateParser.parse("escribir en mi diario", now)
+        assertNull(r.repeat)
+        assertNull(r.dueAt)
     }
 
     @Test fun losEnlacesNoSonFechas() =

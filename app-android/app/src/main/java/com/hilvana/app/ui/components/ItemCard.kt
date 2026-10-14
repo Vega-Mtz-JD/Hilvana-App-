@@ -82,6 +82,7 @@ fun ItemCard(
                         text = buildString {
                             append(folder?.label ?: "${item.type.emoji} ${item.type.label}")
                             item.dueAt?.let { append(" · ⏰ ").append(formatDue(it)) }
+                            item.repeatRule?.let { append(" · 🔁 ").append(it.label) }
                         },
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,

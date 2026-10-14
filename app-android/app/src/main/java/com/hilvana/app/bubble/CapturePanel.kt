@@ -16,6 +16,7 @@ import com.hilvana.app.capture.CaptureActivity
 import com.hilvana.app.capture.CaptureContent
 import com.hilvana.app.data.ImageStore
 import com.hilvana.app.data.ItemType
+import com.hilvana.app.data.RepeatRule
 import com.hilvana.app.repository
 import com.hilvana.app.ui.theme.HilvanaTheme
 
@@ -27,6 +28,7 @@ data class Captured(
     val folderId: Long?,
     val imagePath: String?,
     val priority: Int,
+    val repeat: RepeatRule?,
 )
 
 /**
@@ -61,8 +63,8 @@ class CapturePanel(
                         imagePath = imagePath,
                         onImageChange = ::replaceImage,
                         onPickImage = ::pickImageInActivity,
-                        onSave = { text, type, dueAt, folderId, priority ->
-                            onSave(Captured(text, type, dueAt, folderId, imagePath, priority))
+                        onSave = { text, type, dueAt, folderId, priority, repeat ->
+                            onSave(Captured(text, type, dueAt, folderId, imagePath, priority, repeat))
                             imagePath = null // ahora es de la nota guardada
                             dismiss()
                         },

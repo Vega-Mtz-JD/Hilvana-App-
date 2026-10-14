@@ -10,7 +10,10 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.hilvana.app.MainActivity
 import com.hilvana.app.data.Item
+import com.hilvana.app.data.ItemType
+import com.hilvana.app.data.nextOccurrenceMillis
 import com.hilvana.app.database
+import com.hilvana.app.repository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -21,13 +24,24 @@ class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val itemId = intent.getLongExtra(EXTRA_ITEM_ID, -1)
         if (itemId < 0) return
+        val isSnooze = intent.getBooleanExtra(EXTRA_SNOOZE, false)
 
         // goAsync: nos da unos segundos extra para leer la base de datos.
         val pending = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val item = context.database.itemDao().getById(itemId)
-                if (item != null && !item.done) showNotification(context, item)
+                if (item != null && !item.done) {
+                    showNotification(context, item)
+                    // Un recordatorio que se repite tiene que sonar la próxima vez aunque no se
+                    // toque "Hecho": se pasa ya a la siguiente fecha (las tareas, en cambio,
+                    // esperan a que las completes).
+                    val rule = item.repeatRule
+                    val dueAt = item.dueAt
+                    if (!isSnooze && rule != null && dueAt != null && item.type == ItemType.REMINDER) {
+                        context.repository.save(item.copy(dueAt = nextOccurrenceMillis(rule, dueAt)))
+                    }
+                }
             } finally {
                 pending.finish()
             }
@@ -72,6 +86,7 @@ class ReminderReceiver : BroadcastReceiver() {
 
     companion object {
         const val EXTRA_ITEM_ID = "item_id"
+        const val EXTRA_SNOOZE = "snooze"
         private const val CHANNEL_ID = "reminders"
         // Evita chocar con el id 1 de la notificación de la burbuja.
         private const val NOTIFICATION_ID_OFFSET = 1000

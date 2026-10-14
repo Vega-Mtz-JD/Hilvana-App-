@@ -18,7 +18,13 @@ function Get-PhysicalDevice {
 
 function Try-Connect([string]$address) {
     if (-not $address) { return $false }
-    adb connect $address | Out-Null
+    # "adb connect" puede quedarse esperando minutos si el celular no responde: máximo 8 s.
+    $log = Join-Path $env:TEMP 'hilvana-adb-connect.txt'
+    $process = Start-Process adb -ArgumentList 'connect', $address -NoNewWindow -PassThru -RedirectStandardOutput $log
+    if (-not $process.WaitForExit(8000)) {
+        $process.Kill()
+        return $false
+    }
     $device = Get-PhysicalDevice
     if ($device) {
         New-Item -ItemType Directory -Force (Split-Path $savedFile) | Out-Null

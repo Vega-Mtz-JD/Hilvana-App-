@@ -56,6 +56,8 @@ import com.hilvana.app.parser.SpanishDateParser
 import com.hilvana.app.reminder.QuickTime
 import androidx.compose.foundation.BorderStroke
 import com.hilvana.app.ui.components.ItemImage
+import com.hilvana.app.data.RepeatRule
+import com.hilvana.app.ui.components.RepeatSelector
 import com.hilvana.app.ui.components.StarRating
 import com.hilvana.app.ui.components.TypeSelector
 import com.hilvana.app.ui.components.starsText
@@ -79,7 +81,7 @@ fun CaptureContent(
     imagePath: String?,
     onImageChange: (String?) -> Unit,
     onPickImage: (currentText: String) -> Unit,
-    onSave: (text: String, type: ItemType, dueAt: Long?, folderId: Long?, priority: Int) -> Unit,
+    onSave: (text: String, type: ItemType, dueAt: Long?, folderId: Long?, priority: Int, repeat: RepeatRule?) -> Unit,
     onDismiss: () -> Unit,
     initialText: String = "",
 ) {
@@ -93,6 +95,9 @@ fun CaptureContent(
     var quickTime by remember { mutableStateOf<QuickTime?>(null) }
     var customDue by remember { mutableStateOf<Long?>(null) }
     var manualPriority by remember { mutableStateOf<Int?>(null) }
+    // La repetición elegida a mano (null también es una elección: "No"), o la detectada.
+    var manualRepeat by remember { mutableStateOf<RepeatRule?>(null) }
+    var repeatChosen by remember { mutableStateOf(false) }
     var ignoreDetection by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val clipKind = remember { ClipboardReader.peekKind(context) }
@@ -124,6 +129,8 @@ fun CaptureContent(
         (selectedType == null || selectedType == detected.type)
     val reminderDue = if (isReminder) quickTime?.toMillis() ?: customDue ?: detectedDue else null
     val shownType = effectiveType ?: ItemType.NOTE
+    val repeat = if (!isReminder || reminderDue == null) null
+    else if (repeatChosen) manualRepeat else detected?.repeat
     val canHavePriority = shownType != ItemType.NOTE
     val priority = if (canHavePriority) manualPriority ?: detectedPriority ?: 0 else 0
     // Si se usó la importancia escrita ("urgente", "!!!"), esas palabras no quedan en el texto.
@@ -236,6 +243,7 @@ fun CaptureContent(
                                     if (detectedPriority != null) append(starsText(detectedPriority)).append(" ")
                                     if (detectedDue != null) {
                                         append("⏰ ").append(formatDue(detectedDue))
+                                        detected.repeat?.let { append(" 🔁 ").append(it.label) }
                                         if (detected.text.isNotBlank()) append(" · ").append(detected.text)
                                     } else if (prefixFolder != null) {
                                         append(prefixFolder.label)
@@ -304,6 +312,15 @@ fun CaptureContent(
                         // Esconde el teclado para que se vea el calendario.
                         onOpenCalendar = { focusManager.clearFocus() },
                     )
+                    if (reminderDue != null) {
+                        RepeatSelector(
+                            repeat = repeat,
+                            onChange = {
+                                manualRepeat = it
+                                repeatChosen = true
+                            },
+                        )
+                    }
                 }
 
                 Row(
@@ -318,7 +335,7 @@ fun CaptureContent(
                                 usesDetection || usesPriorityWords -> parsed.text
                                 else -> text.trim()
                             }.ifBlank { text.trim() }.ifBlank { "📷 Imagen" }
-                            onSave(finalText, shownType, reminderDue, effectiveFolder?.id, priority)
+                            onSave(finalText, shownType, reminderDue, effectiveFolder?.id, priority, repeat)
                         },
                         // Con imagen se puede guardar sin texto; un recordatorio necesita hora.
                         enabled = (text.isNotBlank() || imagePath != null) && (!isReminder || reminderDue != null),

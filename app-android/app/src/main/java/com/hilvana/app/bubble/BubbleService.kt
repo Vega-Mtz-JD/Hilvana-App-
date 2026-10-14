@@ -179,7 +179,7 @@ class BubbleService : Service() {
 
     private fun onCaptured(c: Captured) {
         scope.launch {
-            saveCapture(this@BubbleService, c.text, c.type, c.dueAt, c.folderId, c.imagePath, c.priority)
+            saveCapture(this@BubbleService, c.text, c.type, c.dueAt, c.folderId, c.imagePath, c.priority, c.repeat)
         }
     }
 
