@@ -85,7 +85,7 @@ cd ..
 
 ## 5. Guardar en GitHub
 
-Trabajamos en la rama **`fase-0-prototipo`**. Comprueba en cuál estás:
+Trabajamos en la rama **`main`** (la principal en GitHub). Comprueba en cuál estás:
 
 ```
 git branch --show-current
@@ -126,8 +126,11 @@ git restore .                       # TODO (cuidado: no se puede recuperar)
   repositorio con tu correo privado de GitHub:
   `git config user.name` / `git config user.email`.
 - **Había dos versiones del proyecto**: `main` (estructura del 10-oct, casi todo
-  vacío) y `fase-0-prototipo` (la que funciona, en `app-android/`). Seguimos con
-  `fase-0-prototipo`; `main` queda solo como referencia.
+  vacío) y `fase-0-prototipo` (la que funciona, en `app-android/`). El 13-oct se
+  unió todo a **`main`**, que ahora es la rama principal; la estructura vieja
+  quedó solo en el historial de Git.
+- **El mensaje del commit no puede llevar comillas dobles** dentro (PowerShell 5.1
+  las rompe y el commit no se crea). Usa mensajes simples o comillas simples.
 
 ---
 
