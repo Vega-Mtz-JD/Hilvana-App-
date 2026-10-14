@@ -51,6 +51,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.hilvana.app.data.Folder
 import com.hilvana.app.data.ImageStore
+import com.hilvana.app.data.Item
 import com.hilvana.app.data.ItemType
 import com.hilvana.app.parser.SpanishDateParser
 import com.hilvana.app.reminder.QuickTime
@@ -84,6 +85,11 @@ fun CaptureContent(
     onSave: (text: String, type: ItemType, dueAt: Long?, folderId: Long?, priority: Int, repeat: RepeatRule?) -> Unit,
     onDismiss: () -> Unit,
     initialText: String = "",
+    /** Tareas en foco que se muestran arriba del panel. */
+    focusTasks: List<Item> = emptyList(),
+    hideFocusText: Boolean = false,
+    onFocusStep: (Item) -> Unit = {},
+    onFocusDone: (Item) -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -184,6 +190,8 @@ fun CaptureContent(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                FocusStrip(tasks = focusTasks, hideText = hideFocusText, onStep = onFocusStep, onDone = onFocusDone)
+
                 // Primero: qué se va a guardar. Separado del resto para no confundir.
                 TypeSelector(selected = shownType, onSelect = { selectedType = it })
 

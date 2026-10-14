@@ -39,6 +39,13 @@ data class Item(
     val completedAt: Long? = null,
     /** Cada cuánto se repite (necesita fecha); null = no se repite. */
     val repeatRule: RepeatRule? = null,
+    /** Pasos de una tarea (checklist). */
+    @ColumnInfo(defaultValue = "'[]'") val checklist: List<CheckItem> = emptyList(),
+    /** 🎯 En foco: se muestra fija en notificaciones, burbuja y widget sin abrir la app. */
+    @ColumnInfo(defaultValue = "0") val pinned: Boolean = false,
 )
+
+/** Máximo de tareas en foco a la vez (para que siga siendo "foco"). */
+const val MAX_PINNED = 3
 
 const val MAX_PRIORITY = 5

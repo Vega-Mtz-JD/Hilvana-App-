@@ -95,6 +95,7 @@ fun HilvanaRoot(
     val folders by viewModel.folders.collectAsStateWithLifecycle()
     val lastBackupAt by viewModel.lastBackupAt.collectAsStateWithLifecycle()
     val backupBusy by viewModel.backupBusy.collectAsStateWithLifecycle()
+    val nudgeHours by viewModel.nudgeHours.collectAsStateWithLifecycle()
     // Mientras no se desbloquee, las notas de carpetas protegidas no se muestran en ningún lado.
     val lockedFolderIds = folders.filter { it.locked }.map { it.id }.toSet()
     val items = if (unlocked || lockedFolderIds.isEmpty()) allItems
@@ -282,6 +283,9 @@ fun HilvanaRoot(
         ItemEditorSheet(
             item = item,
             folders = folders,
+            otherPinnedCount = allItems.count { it.pinned && !it.done && it.id != item.id },
+            nudgeHours = nudgeHours,
+            onNudgeHoursChange = viewModel::setNudgeHours,
             onDismiss = { editing = null },
             onSave = {
                 viewModel.save(it)

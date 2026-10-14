@@ -1,5 +1,6 @@
 package com.hilvana.app.data.backup
 
+import com.hilvana.app.data.ChecklistJson
 import com.hilvana.app.data.Folder
 import com.hilvana.app.data.Item
 import com.hilvana.app.data.ItemType
@@ -51,6 +52,8 @@ object BackupJson {
                     .put("priority", item.priority)
                     .put("completedAt", item.completedAt ?: JSONObject.NULL)
                     .put("repeat", item.repeatRule?.name ?: JSONObject.NULL)
+                    .put("checklist", JSONArray(ChecklistJson.encode(item.checklist)))
+                    .put("pinned", item.pinned)
             }))
         return json.toString(2)
     }
@@ -89,6 +92,8 @@ object BackupJson {
                     repeatRule = i.optStringOrNull("repeat")?.let { name ->
                         RepeatRule.entries.firstOrNull { it.name == name }
                     },
+                    checklist = ChecklistJson.decode(i.optJSONArray("checklist")?.toString()),
+                    pinned = i.optBoolean("pinned", false),
                 ),
                 imageName = i.optStringOrNull("image"),
             )

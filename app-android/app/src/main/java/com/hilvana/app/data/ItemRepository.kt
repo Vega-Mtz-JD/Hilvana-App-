@@ -1,6 +1,7 @@
 package com.hilvana.app.data
 
 import android.content.Context
+import com.hilvana.app.focus.FocusNotifier
 import com.hilvana.app.reminder.ReminderScheduler
 import com.hilvana.app.widget.refreshWidgets
 import kotlinx.coroutines.flow.Flow
@@ -44,12 +45,14 @@ class ItemRepository(
         val rule = item.repeatRule
         val dueAt = item.dueAt
         if (rule != null && dueAt != null && item.done && previous != null && !previous.done) {
-            dao.insert(item.copy(id = 0, repeatRule = null, imagePath = null, inInbox = false))
+            dao.insert(item.copy(id = 0, repeatRule = null, imagePath = null, inInbox = false, pinned = false))
             val endOfToday = startOfTomorrow()
             item = item.copy(
                 done = false,
                 completedAt = null,
                 dueAt = if (dueAt < endOfToday) nextOccurrenceMillis(rule, dueAt) else dueAt,
+                // La próxima vez los pasos empiezan de nuevo.
+                checklist = item.checklist.map { it.copy(done = false) },
             )
         }
         val id = if (item.id == 0L) dao.insert(item) else item.id.also { dao.update(item) }
@@ -59,6 +62,7 @@ class ItemRepository(
             ImageStore.delete(previous.imagePath)
         }
         refreshWidgets(context)
+        FocusNotifier.refresh(context)
         return id
     }
 
@@ -67,7 +71,10 @@ class ItemRepository(
         dao.delete(item)
         ImageStore.delete(item.imagePath)
         refreshWidgets(context)
+        FocusNotifier.refresh(context)
     }
+
+    val pinned: Flow<List<Item>> = dao.observePinned()
 
     private fun startOfTomorrow(): Long {
         val zone = ZoneId.systemDefault()

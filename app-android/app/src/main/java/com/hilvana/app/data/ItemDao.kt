@@ -29,6 +29,13 @@ interface ItemDao {
     @Query("SELECT * FROM items ORDER BY createdAt")
     suspend fun getAll(): List<Item>
 
+    /** Tareas en foco pendientes (las más importantes primero). */
+    @Query("SELECT * FROM items WHERE pinned = 1 AND done = 0 ORDER BY priority DESC, createdAt")
+    suspend fun getPinned(): List<Item>
+
+    @Query("SELECT * FROM items WHERE pinned = 1 AND done = 0 ORDER BY priority DESC, createdAt")
+    fun observePinned(): Flow<List<Item>>
+
     @Query("SELECT * FROM items WHERE id = :id")
     suspend fun getById(id: Long): Item?
 

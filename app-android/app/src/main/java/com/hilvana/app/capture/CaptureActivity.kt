@@ -19,6 +19,8 @@ import androidx.core.content.IntentCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.hilvana.app.data.ImageStore
+import com.hilvana.app.data.UserPrefs
+import com.hilvana.app.focus.FocusActions
 import com.hilvana.app.repository
 import com.hilvana.app.ui.theme.HilvanaTheme
 import kotlinx.coroutines.launch
@@ -50,6 +52,7 @@ class CaptureActivity : ComponentActivity() {
         setContent {
             HilvanaTheme {
                 val folders by repository.folders.collectAsStateWithLifecycle(initialValue = emptyList())
+                val focusTasks by repository.pinned.collectAsStateWithLifecycle(initialValue = emptyList())
                 val pickImage = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
                     if (uri != null) importImage(uri)
                 }
@@ -59,6 +62,10 @@ class CaptureActivity : ComponentActivity() {
 
                 CaptureContent(
                     folders = folders,
+                    focusTasks = focusTasks,
+                    hideFocusText = UserPrefs(this).appLockEnabled,
+                    onFocusStep = { lifecycleScope.launch { FocusActions.completeNextStep(this@CaptureActivity, it) } },
+                    onFocusDone = { lifecycleScope.launch { FocusActions.complete(this@CaptureActivity, it) } },
                     initialText = initialText,
                     imagePath = imagePath,
                     onImageChange = ::replaceImage,

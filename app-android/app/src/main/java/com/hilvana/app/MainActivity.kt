@@ -16,6 +16,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import com.hilvana.app.security.AppLock
 import com.hilvana.app.security.LockScreen
+import com.hilvana.app.focus.FocusNotifier
 import com.hilvana.app.widget.refreshWidgets
 import kotlinx.coroutines.launch
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -161,7 +162,11 @@ class MainActivity : FragmentActivity() {
             prefs.appLockEnabled = enabled
             appLockEnabled = enabled
             unlocked = true
-            lifecycleScope.launch { refreshWidgets(this@MainActivity) }
+            lifecycleScope.launch {
+                // Con o sin bloqueo cambia qué se ve en la pantalla de inicio y la de bloqueo.
+                refreshWidgets(this@MainActivity)
+                FocusNotifier.refresh(this@MainActivity)
+            }
         }
     }
 

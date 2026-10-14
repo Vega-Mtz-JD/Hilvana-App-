@@ -4,6 +4,8 @@ import android.app.AlarmManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.hilvana.app.focus.FocusNotifier
+import com.hilvana.app.focus.FocusNudges
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -21,6 +23,10 @@ class RescheduleReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 ReminderScheduler.rescheduleAll(context)
+                // Al reiniciar se borran notificaciones y alarmas: volver a poner la de foco
+                // y empezar de nuevo los empujoncitos.
+                if (intent.action == Intent.ACTION_BOOT_COMPLETED) FocusNudges.cancel(context)
+                FocusNotifier.refresh(context)
             } finally {
                 pending.finish()
             }

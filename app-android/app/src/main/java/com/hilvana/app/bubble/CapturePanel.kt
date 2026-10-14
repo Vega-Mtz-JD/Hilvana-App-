@@ -8,6 +8,10 @@ import android.widget.FrameLayout
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import com.hilvana.app.data.UserPrefs
+import com.hilvana.app.focus.FocusActions
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.setViewTreeLifecycleOwner
@@ -58,8 +62,14 @@ class CapturePanel(
             setContent {
                 HilvanaTheme {
                     val folders by context.repository.folders.collectAsState(initial = emptyList())
+                    val focusTasks by context.repository.pinned.collectAsState(initial = emptyList())
+                    val scope = rememberCoroutineScope()
                     CaptureContent(
                         folders = folders,
+                        focusTasks = focusTasks,
+                        hideFocusText = UserPrefs(context).appLockEnabled,
+                        onFocusStep = { scope.launch { FocusActions.completeNextStep(context, it) } },
+                        onFocusDone = { scope.launch { FocusActions.complete(context, it) } },
                         imagePath = imagePath,
                         onImageChange = ::replaceImage,
                         onPickImage = ::pickImageInActivity,

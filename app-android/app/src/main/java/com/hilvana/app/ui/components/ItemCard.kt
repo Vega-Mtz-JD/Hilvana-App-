@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.hilvana.app.data.Folder
 import com.hilvana.app.data.Item
+import com.hilvana.app.data.progressText
 import com.hilvana.app.ui.formatDue
 import com.hilvana.app.ui.isActionable
 
@@ -80,7 +81,9 @@ fun ItemCard(
                     }
                     Text(
                         text = buildString {
+                            if (item.pinned && !item.done) append("🎯 ")
                             append(folder?.label ?: "${item.type.emoji} ${item.type.label}")
+                            if (item.checklist.isNotEmpty()) append(" · ☑ ").append(item.checklist.progressText)
                             item.dueAt?.let { append(" · ⏰ ").append(formatDue(it)) }
                             item.repeatRule?.let { append(" · 🔁 ").append(it.label) }
                         },

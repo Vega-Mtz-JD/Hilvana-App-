@@ -21,8 +21,10 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
+import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
+import com.hilvana.app.repository
 import androidx.core.app.NotificationCompat
 import com.hilvana.app.MainActivity
 import com.hilvana.app.capture.saveCapture
@@ -49,6 +51,7 @@ class BubbleService : Service() {
 
     private lateinit var windowManager: WindowManager
     private var bubbleView: View? = null
+    private var focusBadge: TextView? = null
     private var dismissView: View? = null
     private lateinit var bubbleParams: WindowManager.LayoutParams
     private lateinit var capturePanel: CapturePanel
@@ -154,7 +157,7 @@ class BubbleService : Service() {
             y = screenHeight() / 3
         }
 
-        val view = TextView(this).apply {
+        val circle = TextView(this).apply {
             text = "H"
             textSize = 22f
             setTextColor(Color.WHITE)
@@ -164,11 +167,43 @@ class BubbleService : Service() {
                 setColor(BUBBLE_COLOR)
                 setStroke(dp(2), Color.WHITE)
             }
+        }
+        // Globito con cuántas tareas hay en foco (oculto si no hay).
+        val badge = TextView(this).apply {
+            textSize = 11f
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(BADGE_COLOR)
+                setStroke(dp(1), Color.WHITE)
+            }
+            visibility = View.GONE
+        }
+        val view = FrameLayout(this).apply {
+            addView(circle, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+            addView(badge, FrameLayout.LayoutParams(dp(20), dp(20), Gravity.TOP or Gravity.END))
             contentDescription = "Burbuja de Hilvana: toca para capturar"
         }
         view.setOnTouchListener(BubbleTouchListener())
         windowManager.addView(view, bubbleParams)
         bubbleView = view
+        focusBadge = badge
+
+        // El número se actualiza solo cuando cambian las tareas en foco.
+        scope.launch {
+            repository.pinned.collect { pinned ->
+                focusBadge?.apply {
+                    text = "${pinned.size}"
+                    visibility = if (pinned.isEmpty()) View.GONE else View.VISIBLE
+                }
+                bubbleView?.contentDescription = if (pinned.isEmpty()) {
+                    "Burbuja de Hilvana: toca para capturar"
+                } else {
+                    "Burbuja de Hilvana: ${pinned.size} tareas en foco. Toca para verlas o capturar"
+                }
+            }
+        }
     }
 
     private fun onBubbleTapped() {
@@ -322,6 +357,7 @@ class BubbleService : Service() {
         private const val DISMISS_SIZE_DP = 64
         private const val DISMISS_MARGIN_DP = 48
         private val BUBBLE_COLOR = Color.parseColor("#6750A4")
+        private val BADGE_COLOR = Color.parseColor("#E34948")
         private val DISMISS_COLOR = Color.parseColor("#B3261E")
 
         private val _isRunning = MutableStateFlow(false)

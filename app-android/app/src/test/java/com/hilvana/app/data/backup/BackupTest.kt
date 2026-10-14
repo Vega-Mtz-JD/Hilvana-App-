@@ -1,5 +1,6 @@
 package com.hilvana.app.data.backup
 
+import com.hilvana.app.data.CheckItem
 import com.hilvana.app.data.Folder
 import com.hilvana.app.data.Item
 import com.hilvana.app.data.ItemType
@@ -26,6 +27,10 @@ class BackupTest {
             imagePath = "/data/user/0/com.hilvana.app/files/images/abc.jpg",
         ),
         Item(id = 13, text = "Pagar luz", type = ItemType.TASK, createdAt = 4_000, done = true, priority = 5, completedAt = 4_500),
+        Item(
+            id = 14, text = "Mudanza", type = ItemType.TASK, createdAt = 6_000, pinned = true,
+            checklist = listOf(CheckItem("Empacar libros", done = true), CheckItem("Llamar al flete")),
+        ),
     )
 
     @Test fun idaYVueltaConservaTodo() {

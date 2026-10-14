@@ -35,6 +35,8 @@ fun TasksScreen(
     // Lo más importante primero; a igual importancia, lo que vence antes.
     val pending = tasks.filter { !it.done }
         .sortedWith(compareByDescending<Item> { it.priority }.thenBy(nullsLast()) { it.dueAt })
+    // Las tareas en foco van primero, en su propia sección.
+    val (focus, others) = pending.partition { it.pinned }
     val completed = tasks.filter { it.done }
 
     LazyColumn(
@@ -45,7 +47,14 @@ fun TasksScreen(
         if (pending.isEmpty()) {
             item { EmptyState("Sin tareas pendientes 🎉") }
         }
-        items(pending, key = { it.id }) { item ->
+        if (focus.isNotEmpty()) {
+            item(key = "focus-header") { SectionHeader("🎯 En foco · también en tus notificaciones") }
+            items(focus, key = { it.id }) { item ->
+                ItemCard(item = item, onClick = { onOpen(item) }, onToggleDone = { onToggleDone(item) })
+            }
+            if (others.isNotEmpty()) item(key = "others-header") { SectionHeader("Pendientes") }
+        }
+        items(others, key = { it.id }) { item ->
             ItemCard(item = item, onClick = { onOpen(item) }, onToggleDone = { onToggleDone(item) })
         }
 

@@ -57,6 +57,9 @@ import com.hilvana.app.data.Item
 import com.hilvana.app.ui.components.ImageViewer
 import com.hilvana.app.ui.components.ItemImage
 import androidx.compose.runtime.mutableIntStateOf
+import com.hilvana.app.data.MAX_PINNED
+import com.hilvana.app.ui.components.ChecklistEditor
+import com.hilvana.app.ui.components.FocusSection
 import com.hilvana.app.ui.components.RepeatSelector
 import com.hilvana.app.ui.components.StarRating
 import com.hilvana.app.ui.components.TypeSelector
@@ -76,6 +79,10 @@ import java.util.TimeZone
 fun ItemEditorSheet(
     item: Item,
     folders: List<Folder>,
+    /** Cuántas OTRAS tareas están en foco (para el máximo). */
+    otherPinnedCount: Int,
+    nudgeHours: Int,
+    onNudgeHoursChange: (Int) -> Unit,
     onDismiss: () -> Unit,
     onSave: (Item) -> Unit,
     onDelete: (Item) -> Unit,
@@ -88,6 +95,8 @@ fun ItemEditorSheet(
     var folderId by rememberSaveable { mutableStateOf(item.folderId) }
     var priority by rememberSaveable { mutableIntStateOf(item.priority) }
     var repeat by rememberSaveable { mutableStateOf(item.repeatRule) }
+    var checklist by remember { mutableStateOf(item.checklist) }
+    var pinned by rememberSaveable { mutableStateOf(item.pinned) }
     var imagePath by rememberSaveable { mutableStateOf(item.imagePath) }
     var showImage by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
@@ -193,6 +202,17 @@ fun ItemEditorSheet(
                 }
             }
 
+            if (type == ItemType.TASK) {
+                ChecklistEditor(steps = checklist, onChange = { checklist = it })
+                FocusSection(
+                    pinned = pinned,
+                    canPin = otherPinnedCount < MAX_PINNED,
+                    nudgeHours = nudgeHours,
+                    onPinnedChange = { pinned = it },
+                    onNudgeHoursChange = onNudgeHoursChange,
+                )
+            }
+
             if (canHaveDate) {
                 Text("Importancia", style = MaterialTheme.typography.labelLarge)
                 StarRating(priority = priority, onChange = { priority = it })
@@ -268,6 +288,8 @@ fun ItemEditorSheet(
                                 folderId = if (type == ItemType.NOTE) folderId else null,
                                 priority = if (canHaveDate) priority else 0,
                                 repeatRule = if (canHaveDate && dueAt != null) repeat else null,
+                                checklist = checklist,
+                                pinned = type == ItemType.TASK && pinned,
                             )
                         )
                     },

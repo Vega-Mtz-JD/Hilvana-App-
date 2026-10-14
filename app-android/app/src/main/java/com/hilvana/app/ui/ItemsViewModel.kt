@@ -9,6 +9,7 @@ import com.hilvana.app.repository
 import android.net.Uri
 import android.widget.Toast
 import com.hilvana.app.data.UserPrefs
+import com.hilvana.app.focus.FocusNudges
 import com.hilvana.app.data.backup.BackupManager
 import com.hilvana.app.data.backup.InvalidBackupException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -75,6 +76,17 @@ class ItemsViewModel(application: Application) : AndroidViewModel(application) {
             _backupBusy.value = false
             Toast.makeText(getApplication(), message, Toast.LENGTH_LONG).show()
         }
+    }
+
+    // ---------- Tareas en foco ----------
+
+    private val _nudgeHours = MutableStateFlow(prefs.focusNudgeHours)
+    val nudgeHours: StateFlow<Int> = _nudgeHours.asStateFlow()
+
+    fun setNudgeHours(hours: Int) {
+        prefs.focusNudgeHours = hours
+        _nudgeHours.value = hours
+        FocusNudges.reschedule(getApplication())
     }
 
     fun save(item: Item) {

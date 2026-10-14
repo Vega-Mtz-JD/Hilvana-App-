@@ -4,10 +4,12 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [Item::class, Folder::class], version = 6, exportSchema = false)
+@Database(entities = [Item::class, Folder::class], version = 7, exportSchema = false)
+@TypeConverters(Converters::class)
 abstract class HilvanaDatabase : RoomDatabase() {
     abstract fun itemDao(): ItemDao
     abstract fun folderDao(): FolderDao
@@ -15,7 +17,9 @@ abstract class HilvanaDatabase : RoomDatabase() {
     companion object {
         fun create(context: Context): HilvanaDatabase =
             Room.databaseBuilder(context, HilvanaDatabase::class.java, "hilvana.db")
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                .addMigrations(
+                    MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
+                )
                 .addCallback(SeedFolders)
                 .build()
 
@@ -72,6 +76,14 @@ abstract class HilvanaDatabase : RoomDatabase() {
         private val MIGRATION_5_6 = object : Migration(5, 6) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE items ADD COLUMN repeatRule TEXT")
+            }
+        }
+
+        /** v6 → v7: checklist de pasos y tareas en foco. */
+        private val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE items ADD COLUMN checklist TEXT NOT NULL DEFAULT '[]'")
+                db.execSQL("ALTER TABLE items ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0")
             }
         }
 
