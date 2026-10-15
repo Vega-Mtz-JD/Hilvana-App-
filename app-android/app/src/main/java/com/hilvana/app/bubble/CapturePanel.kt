@@ -72,7 +72,9 @@ class CapturePanel(
                         onFocusDone = { scope.launch { FocusActions.complete(context, it) } },
                         imagePath = imagePath,
                         onImageChange = ::replaceImage,
-                        onPickImage = ::pickImageInActivity,
+                        onPickImage = { openInActivity(it, CaptureActivity.MODE_IMAGE) },
+                        onDictate = { openInActivity(it, CaptureActivity.MODE_DICTATE) },
+                        onRecordAudio = { openInActivity(it, CaptureActivity.MODE_RECORD) },
                         onSave = { text, type, dueAt, folderId, priority, repeat ->
                             onSave(Captured(text, type, dueAt, folderId, imagePath, priority, repeat))
                             imagePath = null // ahora es de la nota guardada
@@ -131,11 +133,11 @@ class CapturePanel(
     }
 
     /**
-     * El selector de fotos necesita una pantalla (Activity): se cierra el panel y
-     * se abre el de CaptureActivity con lo escrito, que lanza el selector.
+     * Elegir una foto, dictar o grabar necesitan una pantalla visible (Activity): se
+     * cierra el panel y se abre el de CaptureActivity con lo escrito, que lo lanza.
      */
-    private fun pickImageInActivity(currentText: String) {
+    private fun openInActivity(currentText: String, mode: String) {
         dismiss()
-        context.startActivity(CaptureActivity.pickImageIntent(context, currentText))
+        context.startActivity(CaptureActivity.modeIntent(context, currentText, mode))
     }
 }

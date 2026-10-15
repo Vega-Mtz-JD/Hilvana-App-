@@ -8,7 +8,7 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [Item::class, Folder::class], version = 8, exportSchema = false)
+@Database(entities = [Item::class, Folder::class], version = 9, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class HilvanaDatabase : RoomDatabase() {
     abstract fun itemDao(): ItemDao
@@ -19,7 +19,7 @@ abstract class HilvanaDatabase : RoomDatabase() {
             Room.databaseBuilder(context, HilvanaDatabase::class.java, "hilvana.db")
                 .addMigrations(
                     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
-                    MIGRATION_7_8,
+                    MIGRATION_7_8, MIGRATION_8_9,
                 )
                 .addCallback(SeedFolders)
                 .build()
@@ -94,6 +94,14 @@ abstract class HilvanaDatabase : RoomDatabase() {
                 listOf("linkUrl", "linkTitle", "linkSite", "linkImage").forEach { column ->
                     db.execSQL("ALTER TABLE items ADD COLUMN $column TEXT")
                 }
+            }
+        }
+
+        /** v8 → v9: notas de voz. */
+        private val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE items ADD COLUMN audioPath TEXT")
+                db.execSQL("ALTER TABLE items ADD COLUMN audioDurationMs INTEGER")
             }
         }
 

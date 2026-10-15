@@ -51,7 +51,10 @@ class ItemRepository(
         val dueAt = item.dueAt
         if (rule != null && dueAt != null && item.done && previous != null && !previous.done) {
             dao.insert(
-                item.copy(id = 0, repeatRule = null, imagePath = null, linkImage = null, inInbox = false, pinned = false)
+                item.copy(
+                    id = 0, repeatRule = null, imagePath = null, linkImage = null, audioPath = null,
+                    inInbox = false, pinned = false,
+                )
             )
             val endOfToday = startOfTomorrow()
             item = item.copy(
@@ -85,6 +88,9 @@ class ItemRepository(
         if (previous?.linkImage != null && previous.linkImage != item.linkImage) {
             ImageStore.delete(previous.linkImage)
         }
+        if (previous?.audioPath != null && previous.audioPath != item.audioPath) {
+            AudioStore.delete(previous.audioPath)
+        }
         // Enlace nuevo: buscar su vista previa en segundo plano.
         if (url != null && item.linkUrl != url) {
             backgroundScope.launch { LinkPreviewFetcher.fetchFor(context, id, url) }
@@ -99,6 +105,7 @@ class ItemRepository(
         dao.delete(item)
         ImageStore.delete(item.imagePath)
         ImageStore.delete(item.linkImage)
+        AudioStore.delete(item.audioPath)
         refreshWidgets(context)
         FocusNotifier.refresh(context)
     }

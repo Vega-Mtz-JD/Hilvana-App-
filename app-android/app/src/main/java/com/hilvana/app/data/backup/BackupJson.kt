@@ -10,8 +10,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 
-/** Un elemento leído del respaldo, con el nombre de su imagen dentro del zip. */
-data class BackupItem(val item: Item, val imageName: String?)
+/** Un elemento leído del respaldo, con los nombres de su imagen y su audio dentro del zip. */
+data class BackupItem(val item: Item, val imageName: String?, val audioName: String? = null)
 
 data class BackupContent(val folders: List<Folder>, val items: List<BackupItem>)
 
@@ -58,6 +58,8 @@ object BackupJson {
                     .put("linkUrl", item.linkUrl ?: JSONObject.NULL)
                     .put("linkTitle", item.linkTitle ?: JSONObject.NULL)
                     .put("linkSite", item.linkSite ?: JSONObject.NULL)
+                    .put("audio", item.audioPath?.let { File(it).name } ?: JSONObject.NULL)
+                    .put("audioMs", item.audioDurationMs ?: JSONObject.NULL)
             }))
         return json.toString(2)
     }
@@ -102,8 +104,10 @@ object BackupJson {
                     linkUrl = null,
                     linkTitle = i.optStringOrNull("linkTitle"),
                     linkSite = i.optStringOrNull("linkSite"),
+                    audioDurationMs = i.optLongOrNull("audioMs"),
                 ),
                 imageName = i.optStringOrNull("image"),
+                audioName = i.optStringOrNull("audio"),
             )
         }
         return BackupContent(folders, items)

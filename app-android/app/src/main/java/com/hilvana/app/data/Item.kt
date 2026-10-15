@@ -48,6 +48,9 @@ data class Item(
     val linkTitle: String? = null,
     val linkSite: String? = null,
     val linkImage: String? = null,
+    /** Nota de voz guardada por [AudioStore] y su duración. */
+    val audioPath: String? = null,
+    val audioDurationMs: Long? = null,
 )
 
 /** Máximo de tareas en foco a la vez (para que siga siendo "foco"). */

@@ -4,6 +4,8 @@
 
     <!-- Vista previa de enlaces (título y miniatura); se puede apagar en Ajustes -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Notas de voz (se pide al grabar la primera vez) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- Burbuja flotante: dibujar encima de otras apps -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!-- La burbuja vive dentro de un servicio en primer plano -->

@@ -98,6 +98,9 @@ fun ItemCard(
                 if (item.linkTitle != null || item.linkImage != null) {
                     LinkPreviewRow(item)
                 }
+                item.audioPath?.let { path ->
+                    AudioPlayer(path = path, durationMs = item.audioDurationMs, modifier = Modifier.padding(vertical = 4.dp))
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (item.priority > 0) {
                         Text(

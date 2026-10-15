@@ -56,6 +56,7 @@ import com.hilvana.app.data.ItemType
 import com.hilvana.app.parser.SpanishDateParser
 import com.hilvana.app.reminder.QuickTime
 import androidx.compose.foundation.BorderStroke
+import com.hilvana.app.ui.components.AudioPlayer
 import com.hilvana.app.ui.components.ItemImage
 import com.hilvana.app.data.RepeatRule
 import com.hilvana.app.ui.components.RepeatSelector
@@ -85,6 +86,15 @@ fun CaptureContent(
     onSave: (text: String, type: ItemType, dueAt: Long?, folderId: Long?, priority: Int, repeat: RepeatRule?) -> Unit,
     onDismiss: () -> Unit,
     initialText: String = "",
+    /** Nota de voz grabada (la administra quien muestra el panel, igual que la imagen). */
+    audioPath: String? = null,
+    audioDurationMs: Long? = null,
+    onAudioRemove: () -> Unit = {},
+    onRecordAudio: (currentText: String) -> Unit = {},
+    onDictate: (currentText: String) -> Unit = {},
+    /** Texto dictado que hay que agregar al campo (y luego avisar con [onDictationConsumed]). */
+    dictatedText: String? = null,
+    onDictationConsumed: () -> Unit = {},
     /** Tareas en foco que se muestran arriba del panel. */
     focusTasks: List<Item> = emptyList(),
     hideFocusText: Boolean = false,
@@ -143,6 +153,13 @@ fun CaptureContent(
     val usesPriorityWords = canHavePriority && manualPriority == null && detectedPriority != null
 
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
+    // Lo dictado se agrega al texto (como si se hubiera escrito).
+    LaunchedEffect(dictatedText) {
+        if (!dictatedText.isNullOrBlank()) {
+            text = if (text.isBlank()) dictatedText else text.trimEnd() + " " + dictatedText
+            onDictationConsumed()
+        }
+    }
 
     fun paste() {
         when (val clip = ClipboardReader.read(context)) {
@@ -220,6 +237,19 @@ fun CaptureContent(
                     AssistChip(
                         onClick = { onPickImage(text) },
                         label = { Text(if (imagePath == null) "🖼️ Imagen" else "🖼️ Cambiar imagen") },
+                    )
+                    AssistChip(onClick = { onDictate(text) }, label = { Text("🎤 Dictar") })
+                    AssistChip(
+                        onClick = { onRecordAudio(text) },
+                        label = { Text(if (audioPath == null) "🎙️ Audio" else "🎙️ Grabar otro") },
+                    )
+                }
+
+                if (audioPath != null) {
+                    AudioPlayer(
+                        path = audioPath,
+                        durationMs = audioDurationMs,
+                        trailing = { TextButton(onClick = onAudioRemove) { Text("Quitar ✕") } },
                     )
                 }
 
@@ -342,11 +372,12 @@ fun CaptureContent(
                                 usesPrefix -> parsed.textAfterPrefix
                                 usesDetection || usesPriorityWords -> parsed.text
                                 else -> text.trim()
-                            }.ifBlank { text.trim() }.ifBlank { "📷 Imagen" }
+                            }.ifBlank { text.trim() }.ifBlank { if (imagePath != null) "📷 Imagen" else "🎙️ Nota de voz" }
                             onSave(finalText, shownType, reminderDue, effectiveFolder?.id, priority, repeat)
                         },
                         // Con imagen se puede guardar sin texto; un recordatorio necesita hora.
-                        enabled = (text.isNotBlank() || imagePath != null) && (!isReminder || reminderDue != null),
+                        enabled = (text.isNotBlank() || imagePath != null || audioPath != null) &&
+                            (!isReminder || reminderDue != null),
                     ) { Text("Guardar") }
                 }
             }

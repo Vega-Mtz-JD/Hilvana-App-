@@ -21,7 +21,9 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
+import android.view.HapticFeedbackConstants
 import android.widget.FrameLayout
+import com.hilvana.app.capture.CaptureActivity
 import android.widget.TextView
 import android.widget.Toast
 import com.hilvana.app.repository
@@ -225,6 +227,15 @@ class BubbleService : Service() {
         private var startRawX = 0f
         private var startRawY = 0f
         private var dragging = false
+        private var longPressed = false
+        private var pressedView: View? = null
+
+        // Mantener presionada la burbuja (sin moverla) = grabar una nota de voz.
+        private val longPress = Runnable {
+            longPressed = true
+            pressedView?.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+            startActivity(CaptureActivity.modeIntent(this@BubbleService, "", CaptureActivity.MODE_RECORD))
+        }
 
         override fun onTouch(v: View, event: MotionEvent): Boolean {
             when (event.actionMasked) {
@@ -234,13 +245,17 @@ class BubbleService : Service() {
                     startRawX = event.rawX
                     startRawY = event.rawY
                     dragging = false
+                    longPressed = false
+                    pressedView = v
+                    v.postDelayed(longPress, LONG_PRESS_MS)
                 }
 
                 MotionEvent.ACTION_MOVE -> {
                     val dx = event.rawX - startRawX
                     val dy = event.rawY - startRawY
-                    if (!dragging && (abs(dx) > touchSlop || abs(dy) > touchSlop)) {
+                    if (!dragging && !longPressed && (abs(dx) > touchSlop || abs(dy) > touchSlop)) {
                         dragging = true
+                        v.removeCallbacks(longPress)
                         showDismissTarget()
                     }
                     if (dragging) {
@@ -252,7 +267,10 @@ class BubbleService : Service() {
                 }
 
                 MotionEvent.ACTION_UP -> {
-                    if (!dragging) {
+                    v.removeCallbacks(longPress)
+                    if (longPressed) {
+                        // Ya se abrió la grabación al mantener presionado.
+                    } else if (!dragging) {
                         v.performClick()
                         onBubbleTapped()
                     } else {
@@ -263,6 +281,7 @@ class BubbleService : Service() {
                 }
 
                 MotionEvent.ACTION_CANCEL -> {
+                    v.removeCallbacks(longPress)
                     if (dragging) {
                         removeDismissTarget()
                         snapToEdge(v)
@@ -354,6 +373,7 @@ class BubbleService : Service() {
         private const val ACTION_STOP = "com.hilvana.app.bubble.STOP"
 
         private const val BUBBLE_SIZE_DP = 56
+        private const val LONG_PRESS_MS = 550L
         private const val DISMISS_SIZE_DP = 64
         private const val DISMISS_MARGIN_DP = 48
         private val BUBBLE_COLOR = Color.parseColor("#6750A4")

@@ -23,6 +23,8 @@ suspend fun saveCapture(
     imagePath: String? = null,
     priority: Int = 0,
     repeat: RepeatRule? = null,
+    audioPath: String? = null,
+    audioDurationMs: Long? = null,
 ) {
     val app = context.applicationContext
     app.repository.save(
@@ -34,6 +36,8 @@ suspend fun saveCapture(
             imagePath = imagePath,
             priority = priority,
             repeatRule = repeat,
+            audioPath = audioPath,
+            audioDurationMs = audioDurationMs,
         )
     )
 

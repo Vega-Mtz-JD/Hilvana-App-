@@ -2,6 +2,7 @@ package com.hilvana.app.data.backup
 
 import android.content.Context
 import android.net.Uri
+import com.hilvana.app.data.AudioStore
 import com.hilvana.app.data.ImageStore
 import com.hilvana.app.data.Item
 import com.hilvana.app.database
@@ -27,6 +28,7 @@ object BackupManager {
 
     private const val DATA_ENTRY = "data.json"
     private const val IMAGES_DIR = "images/"
+    private const val AUDIO_DIR = "audio/"
 
     suspend fun export(context: Context, uri: Uri): BackupResult = withContext(Dispatchers.IO) {
         val db = context.database
@@ -43,6 +45,11 @@ object BackupManager {
                 zip.closeEntry()
                 images++
             }
+            items.mapNotNull { it.audioPath }.distinct().map(::File).filter { it.exists() }.forEach { file ->
+                zip.putNextEntry(ZipEntry(AUDIO_DIR + file.name))
+                file.inputStream().use { it.copyTo(zip) }
+                zip.closeEntry()
+            }
             zip.putNextEntry(ZipEntry(DATA_ENTRY))
             zip.write(BackupJson.encode(folders, items, System.currentTimeMillis()).toByteArray())
             zip.closeEntry()
@@ -54,6 +61,7 @@ object BackupManager {
         // 1) Leer el zip: las imágenes se copian con nombres nuevos (nunca se usa la
         //    ruta que trae el zip, así un archivo malicioso no puede escribir fuera).
         val extractedImages = mutableMapOf<String, String>()
+        val extractedAudio = mutableMapOf<String, String>()
         var json: String? = null
         val input = context.contentResolver.openInputStream(uri)
             ?: throw InvalidBackupException("No se pudo abrir el archivo")
@@ -64,6 +72,8 @@ object BackupManager {
                     entry.name == DATA_ENTRY -> json = zip.readBytes().decodeToString()
                     entry.name.startsWith(IMAGES_DIR) ->
                         ImageStore.saveCopy(context, zip)?.let { extractedImages[entry.name.removePrefix(IMAGES_DIR)] = it }
+                    entry.name.startsWith(AUDIO_DIR) ->
+                        AudioStore.saveCopy(context, zip)?.let { extractedAudio[entry.name.removePrefix(AUDIO_DIR)] = it }
                 }
             }
         }
@@ -71,6 +81,7 @@ object BackupManager {
             BackupJson.decode(json ?: throw InvalidBackupException("Ese archivo no es un respaldo de Hilvana"))
         } catch (e: Exception) {
             extractedImages.values.forEach(ImageStore::delete)
+            extractedAudio.values.forEach(AudioStore::delete)
             throw e
         }
 
@@ -85,15 +96,23 @@ object BackupManager {
         // 3) Elementos: solo los que no existen ya.
         val toInsert = BackupMerge.newItems(db.itemDao().getAll(), content.items)
         var images = 0
-        toInsert.forEach { (item, imageName) ->
+        toInsert.forEach { (item, imageName, audioName) ->
             val imagePath = imageName?.let { extractedImages.remove(it) }
+            val audioPath = audioName?.let { extractedAudio.remove(it) }
             if (imagePath != null) images++
             db.itemDao().insert(
-                item.copy(id = 0, folderId = item.folderId?.let(folderIds::get), imagePath = imagePath)
+                item.copy(
+                    id = 0,
+                    folderId = item.folderId?.let(folderIds::get),
+                    imagePath = imagePath,
+                    audioPath = audioPath,
+                    audioDurationMs = if (audioPath != null) item.audioDurationMs else null,
+                )
             )
         }
-        // Imágenes de elementos que ya existían: sobran.
+        // Archivos de elementos que ya existían: sobran.
         extractedImages.values.forEach(ImageStore::delete)
+        extractedAudio.values.forEach(AudioStore::delete)
 
         ReminderScheduler.rescheduleAll(context)
         refreshWidgets(context)

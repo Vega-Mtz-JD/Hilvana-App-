@@ -58,6 +58,7 @@ import com.hilvana.app.ui.components.ImageViewer
 import com.hilvana.app.ui.components.ItemImage
 import androidx.compose.runtime.mutableIntStateOf
 import com.hilvana.app.data.MAX_PINNED
+import com.hilvana.app.ui.components.AudioPlayer
 import com.hilvana.app.ui.components.ChecklistEditor
 import com.hilvana.app.ui.components.FocusSection
 import com.hilvana.app.ui.components.RepeatSelector
@@ -96,6 +97,7 @@ fun ItemEditorSheet(
     var priority by rememberSaveable { mutableIntStateOf(item.priority) }
     var repeat by rememberSaveable { mutableStateOf(item.repeatRule) }
     var checklist by remember { mutableStateOf(item.checklist) }
+    var audioPath by rememberSaveable { mutableStateOf(item.audioPath) }
     var pinned by rememberSaveable { mutableStateOf(item.pinned) }
     var imagePath by rememberSaveable { mutableStateOf(item.imagePath) }
     var showImage by remember { mutableStateOf(false) }
@@ -126,7 +128,8 @@ fun ItemEditorSheet(
     }
 
     val canHaveDate = type.isActionable
-    val canSave = (text.isNotBlank() || imagePath != null) && (type != ItemType.REMINDER || dueAt != null)
+    val canSave = (text.isNotBlank() || imagePath != null || audioPath != null) &&
+        (type != ItemType.REMINDER || dueAt != null)
 
     ModalBottomSheet(
         onDismissRequest = {
@@ -154,6 +157,14 @@ fun ItemEditorSheet(
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                 modifier = Modifier.fillMaxWidth(),
             )
+
+            audioPath?.let { path ->
+                AudioPlayer(
+                    path = path,
+                    durationMs = item.audioDurationMs,
+                    trailing = { TextButton(onClick = { audioPath = null }) { Text("Quitar") } },
+                )
+            }
 
             val currentImage = imagePath
             if (currentImage != null) {
@@ -280,7 +291,7 @@ fun ItemEditorSheet(
                         onSave(
                             item.copy(
                                 // Una imagen sola también es una nota válida.
-                                text = text.trim().ifBlank { "📷 Imagen" },
+                                text = text.trim().ifBlank { if (imagePath != null) "📷 Imagen" else "🎙️ Nota de voz" },
                                 imagePath = imagePath,
                                 type = type,
                                 dueAt = if (canHaveDate) dueAt else null,
@@ -289,6 +300,8 @@ fun ItemEditorSheet(
                                 priority = if (canHaveDate) priority else 0,
                                 repeatRule = if (canHaveDate && dueAt != null) repeat else null,
                                 checklist = checklist,
+                                audioPath = audioPath,
+                                audioDurationMs = if (audioPath != null) item.audioDurationMs else null,
                                 pinned = type == ItemType.TASK && pinned,
                             )
                         )
