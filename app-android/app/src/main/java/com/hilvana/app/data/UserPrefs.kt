@@ -2,6 +2,7 @@ package com.hilvana.app.data
 
 import android.content.Context
 import androidx.core.content.edit
+import com.hilvana.app.ui.theme.ThemeMode
 
 /** Preferencias simples del usuario (perfil local, plan §6.1). */
 class UserPrefs(context: Context) {
@@ -26,6 +27,16 @@ class UserPrefs(context: Context) {
         get() = prefs.getLong(KEY_LAST_BACKUP, 0L)
         set(value) = prefs.edit { putLong(KEY_LAST_BACKUP, value) }
 
+    /** Apariencia: claro, oscuro o como el sistema. */
+    var themeMode: ThemeMode
+        get() = ThemeMode.entries.firstOrNull { it.name == prefs.getString(KEY_THEME, null) } ?: ThemeMode.SYSTEM
+        set(value) = prefs.edit { putString(KEY_THEME, value.name) }
+
+    /** Usar los colores del fondo de pantalla (Material You) en vez de los de Hilvana. */
+    var dynamicColor: Boolean
+        get() = prefs.getBoolean(KEY_DYNAMIC_COLOR, false)
+        set(value) = prefs.edit { putBoolean(KEY_DYNAMIC_COLOR, value) }
+
     /** Traer título y miniatura de los enlaces guardados (necesita internet). */
     var linkPreviews: Boolean
         get() = prefs.getBoolean(KEY_LINK_PREVIEWS, true)
@@ -47,6 +58,8 @@ class UserPrefs(context: Context) {
         set(value) = prefs.edit { putLong(KEY_NEXT_NUDGE, value) }
 
     private companion object {
+        const val KEY_THEME = "theme_mode"
+        const val KEY_DYNAMIC_COLOR = "dynamic_color"
         const val KEY_DAILY_GOAL = "daily_goal"
         const val KEY_LINK_PREVIEWS = "link_previews"
         const val KEY_NUDGE_HOURS = "focus_nudge_hours"

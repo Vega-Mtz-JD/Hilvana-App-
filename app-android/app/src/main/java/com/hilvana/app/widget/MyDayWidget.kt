@@ -62,11 +62,12 @@ class MyDayWidget : GlanceAppWidget() {
         // Con la app bloqueada, la pantalla de inicio no muestra el texto: solo cuántos hay.
         val hideText = UserPrefs(context).appLockEnabled
         val goal = UserPrefs(context).dailyGoal
+        val dynamicColor = UserPrefs(context).dynamicColor
         provideContent {
             val all by items.collectAsState(initial = emptyList())
             val startOfToday = startOfDay(System.currentTimeMillis())
             val completedToday = all.count { (it.completedAt ?: 0L) >= startOfToday }
-            GlanceTheme { MyDayContent(myDayItems(all), hideText, goal, completedToday) }
+            HilvanaWidgetTheme(dynamicColor = dynamicColor) { MyDayContent(myDayItems(all), hideText, goal, completedToday) }
         }
     }
 }

@@ -1,5 +1,8 @@
 package com.hilvana.app.bubble
 
+import com.hilvana.app.R
+import androidx.core.content.ContextCompat
+
 import android.animation.ValueAnimator
 import android.app.Notification
 import android.app.NotificationChannel
@@ -22,6 +25,8 @@ import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
 import android.view.HapticFeedbackConstants
+import android.graphics.Typeface
+import androidx.core.content.res.ResourcesCompat
 import android.widget.FrameLayout
 import com.hilvana.app.capture.CaptureActivity
 import android.widget.TextView
@@ -131,7 +136,7 @@ class BubbleService : Service() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_menu_edit)
+            .setSmallIcon(R.drawable.ic_stat_hilvana).setColor(ContextCompat.getColor(this, R.color.hilvana_teal))
             .setContentTitle("Hilvana está lista")
             .setContentText("Toca la burbuja para capturar una idea")
             .setContentIntent(openApp)
@@ -161,19 +166,21 @@ class BubbleService : Service() {
 
         val circle = TextView(this).apply {
             text = "H"
-            textSize = 22f
+            textSize = 24f
             setTextColor(Color.WHITE)
             gravity = Gravity.CENTER
+            typeface = brandTypeface()
             background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
                 setColor(BUBBLE_COLOR)
-                setStroke(dp(2), Color.WHITE)
+                setStroke(dp(3), BUBBLE_BORDER)
             }
         }
         // Globito con cuántas tareas hay en foco (oculto si no hay).
         val badge = TextView(this).apply {
             textSize = 11f
-            setTextColor(Color.WHITE)
+            setTextColor(BADGE_TEXT)
+            typeface = brandTypeface()
             gravity = Gravity.CENTER
             background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
@@ -206,6 +213,13 @@ class BubbleService : Service() {
                 }
             }
         }
+    }
+
+    /** Nunito extra negrita (la fuente de la app) para la H y el globito. */
+    private fun brandTypeface(): Typeface {
+        val nunito = ResourcesCompat.getFont(this, R.font.nunito) ?: return Typeface.DEFAULT_BOLD
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) Typeface.create(nunito, 800, false)
+        else Typeface.create(nunito, Typeface.BOLD)
     }
 
     private fun onBubbleTapped() {
@@ -376,8 +390,11 @@ class BubbleService : Service() {
         private const val LONG_PRESS_MS = 550L
         private const val DISMISS_SIZE_DP = 64
         private const val DISMISS_MARGIN_DP = 48
-        private val BUBBLE_COLOR = Color.parseColor("#6750A4")
-        private val BADGE_COLOR = Color.parseColor("#E34948")
+        // Colores de marca: verde azulado con borde ámbar; el globito de foco en ámbar.
+        private val BUBBLE_COLOR = Color.parseColor("#0F766E")
+        private val BUBBLE_BORDER = Color.parseColor("#F59E0B")
+        private val BADGE_COLOR = Color.parseColor("#F59E0B")
+        private val BADGE_TEXT = Color.parseColor("#2B1B00")
         private val DISMISS_COLOR = Color.parseColor("#B3261E")
 
         private val _isRunning = MutableStateFlow(false)

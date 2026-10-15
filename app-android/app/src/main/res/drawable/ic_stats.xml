@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ícono de Estadísticas (barras), de un solo color como el resto de íconos de la barra. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M5,20 L5,12 Q5,11 6,11 L7.5,11 Q8.5,11 8.5,12 L8.5,20 Z M10.25,20 L10.25,5 Q10.25,4 11.25,4 L12.75,4 Q13.75,4 13.75,5 L13.75,20 Z M15.5,20 L15.5,15 Q15.5,14 16.5,14 L18,14 Q19,14 19,15 L19,20 Z" />
+</vector>

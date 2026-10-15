@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -66,7 +67,11 @@ fun DailyGoalCard(
             }
             LinearProgressIndicator(
                 progress = { (completedToday.toFloat() / goal).coerceIn(0f, 1f) },
-                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp),
             )
             Text(
                 "🔥 Racha: $streak ${if (streak == 1) "día" else "días"} cumpliendo la meta",

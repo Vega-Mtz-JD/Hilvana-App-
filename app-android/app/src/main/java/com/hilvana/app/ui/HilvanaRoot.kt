@@ -15,6 +15,9 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import com.hilvana.app.ui.search.SearchScreen
+import com.hilvana.app.ui.theme.ThemeMode
+import androidx.compose.ui.res.painterResource
+import com.hilvana.app.R
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -93,6 +96,10 @@ fun HilvanaRoot(
     appLockEnabled: Boolean,
     canUseAppLock: Boolean,
     onSetAppLock: (Boolean) -> Unit,
+    themeMode: ThemeMode,
+    onThemeModeChange: (ThemeMode) -> Unit,
+    dynamicColor: Boolean,
+    onDynamicColorChange: (Boolean) -> Unit,
     viewModel: ItemsViewModel = viewModel(),
 ) {
     val allItems by viewModel.items.collectAsStateWithLifecycle()
@@ -199,6 +206,10 @@ fun HilvanaRoot(
             },
             linkPreviews = linkPreviews,
             onLinkPreviewsChange = viewModel::setLinkPreviews,
+            themeMode = themeMode,
+            onThemeModeChange = onThemeModeChange,
+            dynamicColor = dynamicColor,
+            onDynamicColorChange = onDynamicColorChange,
         )
         return
     }
@@ -220,7 +231,7 @@ fun HilvanaRoot(
                         Icon(Icons.Filled.Search, contentDescription = "Buscar")
                     }
                     IconButton(onClick = { showStats = true }) {
-                        Text("📊", style = MaterialTheme.typography.titleLarge)
+                        Icon(painterResource(R.drawable.ic_stats), contentDescription = "Estadísticas")
                     }
                     IconButton(onClick = { showSettings = true }) {
                         if (permissions.allGranted) {

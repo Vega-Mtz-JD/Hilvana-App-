@@ -38,6 +38,7 @@ import com.hilvana.app.ui.onboarding.BatteryHelp
 import com.hilvana.app.ui.onboarding.OnboardingScreen
 import com.hilvana.app.ui.screens.PermissionsState
 import com.hilvana.app.ui.theme.HilvanaTheme
+import com.hilvana.app.ui.theme.ThemeMode
 
 class MainActivity : FragmentActivity() {
 
@@ -53,15 +54,21 @@ class MainActivity : FragmentActivity() {
     private var unlocked by mutableStateOf(false)
     private var backgroundSince = 0L
 
+    // Apariencia (Ajustes): se aplica al instante sin reiniciar la app.
+    private var themeMode by mutableStateOf(ThemeMode.SYSTEM)
+    private var dynamicColor by mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         onboardingDone = prefs.onboardingDone
         userName = prefs.userName
         appLockEnabled = prefs.appLockEnabled
+        themeMode = prefs.themeMode
+        dynamicColor = prefs.dynamicColor
 
         setContent {
-            HilvanaTheme {
+            HilvanaTheme(themeMode = themeMode, dynamicColor = dynamicColor) {
                 val bubbleRunning by BubbleService.isRunning.collectAsStateWithLifecycle()
                 val notificationLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestPermission()
@@ -117,6 +124,17 @@ class MainActivity : FragmentActivity() {
                         appLockEnabled = appLockEnabled,
                         canUseAppLock = AppLock.isAvailable(this),
                         onSetAppLock = ::setAppLock,
+                        themeMode = themeMode,
+                        onThemeModeChange = {
+                            prefs.themeMode = it
+                            themeMode = it
+                        },
+                        dynamicColor = dynamicColor,
+                        onDynamicColorChange = {
+                            prefs.dynamicColor = it
+                            dynamicColor = it
+                            lifecycleScope.launch { refreshWidgets(this@MainActivity) }
+                        },
                     )
                 }
             }

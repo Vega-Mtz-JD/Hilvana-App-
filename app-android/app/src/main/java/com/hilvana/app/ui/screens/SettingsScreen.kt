@@ -21,6 +21,9 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.FilterChip
+import android.os.Build
+import com.hilvana.app.ui.theme.ThemeMode
 import java.text.DateFormat
 import java.time.LocalDate
 import java.util.Date
@@ -67,6 +70,10 @@ fun SettingsScreen(
     exportGate: (() -> Unit) -> Unit,
     linkPreviews: Boolean,
     onLinkPreviewsChange: (Boolean) -> Unit,
+    themeMode: ThemeMode,
+    onThemeModeChange: (ThemeMode) -> Unit,
+    dynamicColor: Boolean,
+    onDynamicColorChange: (Boolean) -> Unit,
 ) {
     val createBackup = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/zip")
@@ -102,6 +109,36 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(if (bubbleRunning) "Ocultar burbuja" else "Mostrar burbuja")
+            }
+
+            Text("Apariencia", style = MaterialTheme.typography.titleMedium)
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("🌗 Tema", style = MaterialTheme.typography.titleSmall)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ThemeMode.entries.forEach { mode ->
+                            FilterChip(
+                                selected = themeMode == mode,
+                                onClick = { onThemeModeChange(mode) },
+                                label = { Text(mode.label) },
+                            )
+                        }
+                    }
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text("🎨 Colores del fondo de pantalla", style = MaterialTheme.typography.titleSmall)
+                                Text(
+                                    if (dynamicColor) "La app toma los colores de tu fondo de pantalla."
+                                    else "Usando los colores de Hilvana (verde azulado y ámbar).",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Switch(checked = dynamicColor, onCheckedChange = onDynamicColorChange)
+                        }
+                    }
+                }
             }
 
             Text("Privacidad", style = MaterialTheme.typography.titleMedium)

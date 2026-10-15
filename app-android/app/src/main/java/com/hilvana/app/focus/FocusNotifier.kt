@@ -1,5 +1,8 @@
 package com.hilvana.app.focus
 
+import com.hilvana.app.R
+import androidx.core.content.ContextCompat
+
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -103,7 +106,7 @@ object FocusNotifier {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val builder = NotificationCompat.Builder(context, if (nudge) CHANNEL_NUDGE else CHANNEL_FOCUS)
-            .setSmallIcon(android.R.drawable.ic_menu_agenda)
+            .setSmallIcon(R.drawable.ic_stat_hilvana).setColor(ContextCompat.getColor(context, R.color.hilvana_teal))
             .setContentTitle(title)
             .setContentText(summary)
             .setStyle(if (pinned.size > 1) style else NotificationCompat.BigTextStyle().bigText(summary))
@@ -127,7 +130,7 @@ object FocusNotifier {
             builder.setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             builder.setPublicVersion(
                 NotificationCompat.Builder(context, CHANNEL_FOCUS)
-                    .setSmallIcon(android.R.drawable.ic_menu_agenda)
+                    .setSmallIcon(R.drawable.ic_stat_hilvana).setColor(ContextCompat.getColor(context, R.color.hilvana_teal))
                     .setContentTitle("🎯 ${pinned.size} ${if (pinned.size == 1) "tarea" else "tareas"} en foco")
                     .build()
             )

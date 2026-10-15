@@ -1,5 +1,8 @@
 package com.hilvana.app.reminder
 
+import com.hilvana.app.R
+import androidx.core.content.ContextCompat
+
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -65,7 +68,7 @@ class ReminderReceiver : BroadcastReceiver() {
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+            .setSmallIcon(R.drawable.ic_stat_hilvana).setColor(ContextCompat.getColor(context, R.color.hilvana_teal))
             .setContentTitle("Recordatorio")
             .setContentText(item.text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(item.text))

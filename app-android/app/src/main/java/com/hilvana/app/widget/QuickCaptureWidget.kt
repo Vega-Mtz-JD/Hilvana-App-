@@ -24,6 +24,7 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.hilvana.app.capture.CaptureActivity
+import com.hilvana.app.data.UserPrefs
 
 /**
  * Widget "Captura rápida" (plan §5): una barra que abre el panel de captura.
@@ -32,8 +33,9 @@ import com.hilvana.app.capture.CaptureActivity
 class QuickCaptureWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val dynamicColor = UserPrefs(context).dynamicColor
         provideContent {
-            GlanceTheme { QuickCaptureContent() }
+            HilvanaWidgetTheme(dynamicColor = dynamicColor) { QuickCaptureContent() }
         }
     }
 }

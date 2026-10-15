@@ -53,9 +53,10 @@ class FocusWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val pinned = context.repository.pinned
         val hideText = UserPrefs(context).appLockEnabled
+        val dynamicColor = UserPrefs(context).dynamicColor
         provideContent {
             val tasks by pinned.collectAsState(initial = emptyList())
-            GlanceTheme { FocusContent(tasks, hideText) }
+            HilvanaWidgetTheme(dynamicColor = dynamicColor) { FocusContent(tasks, hideText) }
         }
     }
 }
