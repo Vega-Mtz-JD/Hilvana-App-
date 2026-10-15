@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Vista previa de enlaces (título y miniatura); se puede apagar en Ajustes -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <!-- Burbuja flotante: dibujar encima de otras apps -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!-- La burbuja vive dentro de un servicio en primer plano -->

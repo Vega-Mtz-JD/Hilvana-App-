@@ -28,6 +28,11 @@ class ItemsViewModel(application: Application) : AndroidViewModel(application) {
     val items: StateFlow<List<Item>> = repository.items
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    init {
+        // Vistas previas de enlaces que quedaron pendientes (notas viejas o sin internet).
+        viewModelScope.launch { repository.backfillLinkPreviews() }
+    }
+
     val folders: StateFlow<List<Folder>> = repository.folders
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -77,6 +82,17 @@ class ItemsViewModel(application: Application) : AndroidViewModel(application) {
             _backupBusy.value = false
             Toast.makeText(getApplication(), message, Toast.LENGTH_LONG).show()
         }
+    }
+
+    // ---------- Vista previa de enlaces ----------
+
+    private val _linkPreviews = MutableStateFlow(prefs.linkPreviews)
+    val linkPreviews: StateFlow<Boolean> = _linkPreviews.asStateFlow()
+
+    fun setLinkPreviews(enabled: Boolean) {
+        prefs.linkPreviews = enabled
+        _linkPreviews.value = enabled
+        if (enabled) viewModelScope.launch { repository.backfillLinkPreviews() }
     }
 
     // ---------- Meta diaria ----------

@@ -54,6 +54,10 @@ object BackupJson {
                     .put("repeat", item.repeatRule?.name ?: JSONObject.NULL)
                     .put("checklist", JSONArray(ChecklistJson.encode(item.checklist)))
                     .put("pinned", item.pinned)
+                    // La miniatura del enlace no se guarda: se vuelve a traer al importar.
+                    .put("linkUrl", item.linkUrl ?: JSONObject.NULL)
+                    .put("linkTitle", item.linkTitle ?: JSONObject.NULL)
+                    .put("linkSite", item.linkSite ?: JSONObject.NULL)
             }))
         return json.toString(2)
     }
@@ -94,6 +98,10 @@ object BackupJson {
                     },
                     checklist = ChecklistJson.decode(i.optJSONArray("checklist")?.toString()),
                     pinned = i.optBoolean("pinned", false),
+                    // linkUrl vacío = "falta la vista previa": se vuelve a traer con su miniatura.
+                    linkUrl = null,
+                    linkTitle = i.optStringOrNull("linkTitle"),
+                    linkSite = i.optStringOrNull("linkSite"),
                 ),
                 imageName = i.optStringOrNull("image"),
             )

@@ -26,6 +26,9 @@ import com.hilvana.app.data.Folder
 import com.hilvana.app.data.Item
 import com.hilvana.app.data.progressText
 import com.hilvana.app.ui.search.SearchEngine
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -92,6 +95,9 @@ fun ItemCard(
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                 )
+                if (item.linkTitle != null || item.linkImage != null) {
+                    LinkPreviewRow(item)
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (item.priority > 0) {
                         Text(
@@ -135,6 +141,37 @@ fun ItemCard(
 }
 
 private val LINK = Regex("(?:https?://|www\\.)\\S+")
+
+/** Vista previa del enlace (como en WhatsApp): miniatura, título y sitio. */
+@Composable
+private fun LinkPreviewRow(item: Item) {
+    Row(
+        modifier = Modifier
+            .padding(vertical = 6.dp)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        item.linkImage?.let { path ->
+            ItemImage(path = path, maxSide = 240, modifier = Modifier.size(64.dp))
+        }
+        Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+            item.linkTitle?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            item.linkSite?.let {
+                Text("🔗 $it", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
 
 @Composable
 fun SectionHeader(text: String, modifier: Modifier = Modifier) {

@@ -1,7 +1,11 @@
 package com.hilvana.app.data
 
 import android.content.Context
+import com.hilvana.app.data.link.LinkPreviewFetcher
+import com.hilvana.app.data.link.LinkPreviewParser
 import com.hilvana.app.focus.FocusNotifier
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import com.hilvana.app.reminder.ReminderScheduler
 import com.hilvana.app.widget.refreshWidgets
 import kotlinx.coroutines.flow.Flow
@@ -17,6 +21,7 @@ class ItemRepository(
     private val context: Context,
     private val dao: ItemDao,
     private val folderDao: FolderDao,
+    private val backgroundScope: CoroutineScope,
 ) {
 
     val items: Flow<List<Item>> = dao.observeAll()
@@ -45,7 +50,9 @@ class ItemRepository(
         val rule = item.repeatRule
         val dueAt = item.dueAt
         if (rule != null && dueAt != null && item.done && previous != null && !previous.done) {
-            dao.insert(item.copy(id = 0, repeatRule = null, imagePath = null, inInbox = false, pinned = false))
+            dao.insert(
+                item.copy(id = 0, repeatRule = null, imagePath = null, linkImage = null, inInbox = false, pinned = false)
+            )
             val endOfToday = startOfTomorrow()
             item = item.copy(
                 done = false,
@@ -55,11 +62,32 @@ class ItemRepository(
                 checklist = item.checklist.map { it.copy(done = false) },
             )
         }
+        // Vista previa del enlace: la maneja el repositorio (no la pantalla). Si el enlace
+        // sigue igual se conserva la que ya había; si cambió o se quitó, se borra.
+        val url = LinkPreviewParser.firstUrl(item.text)
+        item = if (url != null && previous?.linkUrl == url) {
+            item.copy(
+                linkUrl = previous.linkUrl,
+                linkTitle = previous.linkTitle,
+                linkSite = previous.linkSite,
+                linkImage = previous.linkImage,
+            )
+        } else {
+            item.copy(linkUrl = null, linkTitle = null, linkSite = null, linkImage = null)
+        }
+
         val id = if (item.id == 0L) dao.insert(item) else item.id.also { dao.update(item) }
         syncAlarm(item.copy(id = id))
-        // Si cambió o se quitó la imagen, la anterior ya no la usa nadie.
+        // Si cambió o se quitó la imagen (o la miniatura del enlace), la anterior ya no la usa nadie.
         if (previous?.imagePath != null && previous.imagePath != item.imagePath) {
             ImageStore.delete(previous.imagePath)
+        }
+        if (previous?.linkImage != null && previous.linkImage != item.linkImage) {
+            ImageStore.delete(previous.linkImage)
+        }
+        // Enlace nuevo: buscar su vista previa en segundo plano.
+        if (url != null && item.linkUrl != url) {
+            backgroundScope.launch { LinkPreviewFetcher.fetchFor(context, id, url) }
         }
         refreshWidgets(context)
         FocusNotifier.refresh(context)
@@ -70,11 +98,21 @@ class ItemRepository(
         ReminderScheduler.cancel(context, item.id)
         dao.delete(item)
         ImageStore.delete(item.imagePath)
+        ImageStore.delete(item.linkImage)
         refreshWidgets(context)
         FocusNotifier.refresh(context)
     }
 
     val pinned: Flow<List<Item>> = dao.observePinned()
+
+    /** Vistas previas que faltan (notas guardadas antes, o sin internet en su momento). */
+    suspend fun backfillLinkPreviews(limit: Int = 15) {
+        if (!UserPrefs(context).linkPreviews) return
+        dao.getAll()
+            .mapNotNull { item -> LinkPreviewParser.firstUrl(item.text)?.takeIf { it != item.linkUrl }?.let { item to it } }
+            .take(limit)
+            .forEach { (item, url) -> LinkPreviewFetcher.fetchFor(context, item.id, url) }
+    }
 
     private fun startOfTomorrow(): Long {
         val zone = ZoneId.systemDefault()

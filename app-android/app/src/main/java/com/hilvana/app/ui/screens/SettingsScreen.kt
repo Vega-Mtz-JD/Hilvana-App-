@@ -65,6 +65,8 @@ fun SettingsScreen(
     onImportBackup: (Uri) -> Unit,
     /** Ejecuta la acción tras pedir huella si hay algo protegido (el respaldo lo incluye todo). */
     exportGate: (() -> Unit) -> Unit,
+    linkPreviews: Boolean,
+    onLinkPreviewsChange: (Boolean) -> Unit,
 ) {
     val createBackup = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/zip")
@@ -131,6 +133,21 @@ fun SettingsScreen(
                         },
                         style = MaterialTheme.typography.bodySmall,
                     )
+                }
+            }
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("🔗 Vista previa de enlaces", style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            "Trae el título y la miniatura de los links que guardas (YouTube, TikTok, " +
+                                "páginas…). Para eso Hilvana visita esa página; tus notas no se envían.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(checked = linkPreviews, onCheckedChange = onLinkPreviewsChange)
                 }
             }
 

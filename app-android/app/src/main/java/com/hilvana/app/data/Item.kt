@@ -43,6 +43,11 @@ data class Item(
     @ColumnInfo(defaultValue = "'[]'") val checklist: List<CheckItem> = emptyList(),
     /** 🎯 En foco: se muestra fija en notificaciones, burbuja y widget sin abrir la app. */
     @ColumnInfo(defaultValue = "0") val pinned: Boolean = false,
+    /** Vista previa del primer enlace del texto: para qué enlace es, título, sitio y miniatura. */
+    val linkUrl: String? = null,
+    val linkTitle: String? = null,
+    val linkSite: String? = null,
+    val linkImage: String? = null,
 )
 
 /** Máximo de tareas en foco a la vez (para que siga siendo "foco"). */

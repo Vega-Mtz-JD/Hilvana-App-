@@ -26,6 +26,11 @@ class UserPrefs(context: Context) {
         get() = prefs.getLong(KEY_LAST_BACKUP, 0L)
         set(value) = prefs.edit { putLong(KEY_LAST_BACKUP, value) }
 
+    /** Traer título y miniatura de los enlaces guardados (necesita internet). */
+    var linkPreviews: Boolean
+        get() = prefs.getBoolean(KEY_LINK_PREVIEWS, true)
+        set(value) = prefs.edit { putBoolean(KEY_LINK_PREVIEWS, value) }
+
     /** Meta diaria: cuántas cosas completar al día (0 = apagada). */
     var dailyGoal: Int
         get() = prefs.getInt(KEY_DAILY_GOAL, 3)
@@ -43,6 +48,7 @@ class UserPrefs(context: Context) {
 
     private companion object {
         const val KEY_DAILY_GOAL = "daily_goal"
+        const val KEY_LINK_PREVIEWS = "link_previews"
         const val KEY_NUDGE_HOURS = "focus_nudge_hours"
         const val KEY_NEXT_NUDGE = "focus_next_nudge_at"
         const val KEY_LAST_BACKUP = "last_backup_at"
