@@ -47,6 +47,8 @@ import com.hilvana.app.data.Item
 import com.hilvana.app.data.ItemType
 import com.hilvana.app.ui.screens.CalendarScreen
 import com.hilvana.app.ui.stats.StatsScreen
+import com.hilvana.app.ui.stats.StatsCalculator
+import com.hilvana.app.ui.components.DailyGoalCard
 import com.hilvana.app.ui.screens.InboxScreen
 import java.time.LocalDate
 import java.time.ZoneId
@@ -98,6 +100,7 @@ fun HilvanaRoot(
     val lastBackupAt by viewModel.lastBackupAt.collectAsStateWithLifecycle()
     val backupBusy by viewModel.backupBusy.collectAsStateWithLifecycle()
     val nudgeHours by viewModel.nudgeHours.collectAsStateWithLifecycle()
+    val dailyGoal by viewModel.dailyGoal.collectAsStateWithLifecycle()
     // Mientras no se desbloquee, las notas de carpetas protegidas no se muestran en ningún lado.
     val lockedFolderIds = folders.filter { it.locked }.map { it.id }.toSet()
     val items = if (unlocked || lockedFolderIds.isEmpty()) allItems
@@ -165,7 +168,7 @@ fun HilvanaRoot(
 
     if (showStats) {
         // Con la app bloqueada no cuenta lo de carpetas protegidas (usa la lista ya filtrada).
-        StatsScreen(items = items, folders = folders, onBack = { showStats = false })
+        StatsScreen(items = items, folders = folders, dailyGoal = dailyGoal, onBack = { showStats = false })
         return
     }
 
@@ -276,6 +279,17 @@ fun HilvanaRoot(
                 modifier = contentModifier,
                 banner = if (permissions.allGranted) null else {
                     { SetupBanner(onOpenSettings = { showSettings = true }) }
+                },
+                goalCard = {
+                    val stats = remember(items, dailyGoal) {
+                        StatsCalculator.compute(items, folders, dailyGoal = dailyGoal)
+                    }
+                    DailyGoalCard(
+                        goal = dailyGoal,
+                        completedToday = stats.completedToday,
+                        streak = stats.streak,
+                        onGoalChange = viewModel::setDailyGoal,
+                    )
                 },
             )
             Tab.INBOX -> InboxScreen(

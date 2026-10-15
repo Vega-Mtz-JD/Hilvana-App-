@@ -21,6 +21,7 @@ fun TodayScreen(
     onToggleDone: (Item) -> Unit,
     modifier: Modifier = Modifier,
     banner: (@Composable () -> Unit)? = null,
+    goalCard: (@Composable () -> Unit)? = null,
 ) {
     val groups = groupForToday(items)
 
@@ -30,6 +31,7 @@ fun TodayScreen(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (banner != null) item { banner() }
+        if (goalCard != null) item { goalCard() }
 
         if (groups.isEmpty) {
             item { EmptyState("Nada pendiente hoy 🎉\nToca + o la burbuja para anotar algo.") }

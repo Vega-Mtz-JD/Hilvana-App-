@@ -35,6 +35,20 @@ class StatsCalculatorTest {
         assertEquals(4, StatsCalculator.bestStreak(days))
     }
 
+    @Test fun rachaConMetaDiaria() {
+        // Ayer y anteayer se completaron 3 cosas; hoy 1. Con meta 3: racha 2 (hoy aún no).
+        fun done(day: LocalDate, n: Int) = (1..n).map {
+            Item(text = "x", type = ItemType.TASK, createdAt = at(day), done = true, completedAt = at(day, 9 + it))
+        }
+        val items = done(daysAgo(2), 3) + done(daysAgo(1), 3) + done(today, 1)
+        val stats = StatsCalculator.compute(items, emptyList(), now, zone, dailyGoal = 3)
+        assertEquals(1, stats.completedToday)
+        assertEquals(3, stats.dailyGoal)
+        assertEquals(2, stats.streak)
+        // Sin meta (cuenta con 1 al día): 3 días seguidos incluyendo hoy.
+        assertEquals(3, StatsCalculator.compute(items, emptyList(), now, zone).streak)
+    }
+
     @Test fun resumenGeneral() {
         val ideas = Folder(id = 1, name = "Ideas")
         val items = listOf(

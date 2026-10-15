@@ -10,6 +10,7 @@ import android.net.Uri
 import android.widget.Toast
 import com.hilvana.app.data.UserPrefs
 import com.hilvana.app.focus.FocusNudges
+import com.hilvana.app.widget.refreshWidgets
 import com.hilvana.app.data.backup.BackupManager
 import com.hilvana.app.data.backup.InvalidBackupException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -76,6 +77,17 @@ class ItemsViewModel(application: Application) : AndroidViewModel(application) {
             _backupBusy.value = false
             Toast.makeText(getApplication(), message, Toast.LENGTH_LONG).show()
         }
+    }
+
+    // ---------- Meta diaria ----------
+
+    private val _dailyGoal = MutableStateFlow(prefs.dailyGoal)
+    val dailyGoal: StateFlow<Int> = _dailyGoal.asStateFlow()
+
+    fun setDailyGoal(goal: Int) {
+        prefs.dailyGoal = goal
+        _dailyGoal.value = goal
+        viewModelScope.launch { refreshWidgets(getApplication()) }
     }
 
     // ---------- Tareas en foco ----------

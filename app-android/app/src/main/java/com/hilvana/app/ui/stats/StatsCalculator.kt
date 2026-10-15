@@ -15,7 +15,10 @@ data class Stats(
     val pending: Int,
     val overdue: Int,
     val completedLast7Days: Int,
-    /** Días seguidos (hasta hoy, o hasta ayer si hoy aún no) completando al menos una cosa. */
+    val completedToday: Int,
+    /** Meta diaria usada para la racha (al menos 1). */
+    val dailyGoal: Int,
+    /** Días seguidos (hasta hoy, o hasta ayer si hoy aún no) cumpliendo la meta diaria. */
     val streak: Int,
     val bestStreak: Int,
     val activity: List<DayActivity>,
@@ -36,6 +39,8 @@ object StatsCalculator {
         folders: List<Folder>,
         now: Long = System.currentTimeMillis(),
         zone: ZoneId = ZoneId.systemDefault(),
+        /** Meta diaria (0 = apagada: entonces la racha cuenta días con al menos 1). */
+        dailyGoal: Int = 0,
     ): Stats {
         fun Long.day(): LocalDate = Instant.ofEpochMilli(this).atZone(zone).toLocalDate()
         val today = now.day()
@@ -58,13 +63,19 @@ object StatsCalculator {
             .toList()
             .sortedByDescending { it.second }
 
+        // Días que cuentan para la racha: los que llegaron a la meta.
+        val goal = dailyGoal.coerceAtLeast(1)
+        val goalDays = completedPerDay.filterValues { it >= goal }.keys
+
         return Stats(
             total = items.size,
             pending = pending.size,
             overdue = pending.count { it.dueAt != null && it.dueAt < now },
             completedLast7Days = completionDays.count { !it.isBefore(today.minusDays(6)) },
-            streak = currentStreak(completionDays.toSet(), today),
-            bestStreak = bestStreak(completionDays.toSet()),
+            completedToday = completedPerDay[today] ?: 0,
+            dailyGoal = goal,
+            streak = currentStreak(goalDays, today),
+            bestStreak = bestStreak(goalDays),
             activity = activity,
             byType = ItemType.entries.associateWith { type -> items.count { it.type == type } },
             pendingByPriority = (0..MAX_PRIORITY).map { stars -> pending.count { it.priority == stars } },

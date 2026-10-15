@@ -77,8 +77,8 @@ private object ChartColors {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StatsScreen(items: List<Item>, folders: List<Folder>, onBack: () -> Unit) {
-    val stats = remember(items, folders) { StatsCalculator.compute(items, folders) }
+fun StatsScreen(items: List<Item>, folders: List<Folder>, dailyGoal: Int, onBack: () -> Unit) {
+    val stats = remember(items, folders, dailyGoal) { StatsCalculator.compute(items, folders, dailyGoal = dailyGoal) }
 
     Scaffold(
         topBar = {
@@ -142,7 +142,7 @@ private fun KpiGrid(stats: Stats) {
             StatTile("✅", "Completados", "${stats.completedLast7Days}", "últimos 7 días", Modifier.weight(1f))
             StatTile(
                 "🔥", "Racha", "${stats.streak} ${if (stats.streak == 1) "día" else "días"}",
-                "mejor: ${stats.bestStreak}", Modifier.weight(1f),
+                "meta ${stats.dailyGoal}/día · mejor: ${stats.bestStreak}", Modifier.weight(1f),
             )
         }
         if (stats.overdue > 0) {

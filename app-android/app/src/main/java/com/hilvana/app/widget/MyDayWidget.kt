@@ -61,9 +61,12 @@ class MyDayWidget : GlanceAppWidget() {
         val items = context.repository.items
         // Con la app bloqueada, la pantalla de inicio no muestra el texto: solo cuántos hay.
         val hideText = UserPrefs(context).appLockEnabled
+        val goal = UserPrefs(context).dailyGoal
         provideContent {
             val all by items.collectAsState(initial = emptyList())
-            GlanceTheme { MyDayContent(myDayItems(all), hideText) }
+            val startOfToday = startOfDay(System.currentTimeMillis())
+            val completedToday = all.count { (it.completedAt ?: 0L) >= startOfToday }
+            GlanceTheme { MyDayContent(myDayItems(all), hideText, goal, completedToday) }
         }
     }
 }
@@ -78,7 +81,7 @@ private fun myDayItems(items: List<Item>, now: Long = System.currentTimeMillis()
 }
 
 @Composable
-private fun MyDayContent(items: List<Item>, hideText: Boolean) {
+private fun MyDayContent(items: List<Item>, hideText: Boolean, goal: Int, completedToday: Int) {
     val context = LocalContext.current
     val today = LocalDate.now().format(DateTimeFormatter.ofPattern("EEE d MMM", Locale.forLanguageTag("es")))
 
@@ -102,7 +105,14 @@ private fun MyDayContent(items: List<Item>, hideText: Boolean) {
                     "Mi día",
                     style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.Bold, color = GlanceTheme.colors.onSurface),
                 )
-                Text(today, style = TextStyle(fontSize = 12.sp, color = GlanceTheme.colors.onSurfaceVariant))
+                Text(
+                    today + when {
+                        goal <= 0 -> ""
+                        completedToday >= goal -> " · 🎉 meta $completedToday/$goal"
+                        else -> " · 🎯 $completedToday/$goal"
+                    },
+                    style = TextStyle(fontSize = 12.sp, color = GlanceTheme.colors.onSurfaceVariant),
+                )
             }
             Box(
                 modifier = GlanceModifier
