@@ -74,6 +74,7 @@ fun SettingsScreen(
     onThemeModeChange: (ThemeMode) -> Unit,
     dynamicColor: Boolean,
     onDynamicColorChange: (Boolean) -> Unit,
+    cloudCard: @Composable () -> Unit,
 ) {
     val createBackup = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/zip")
@@ -189,6 +190,7 @@ fun SettingsScreen(
             }
 
             Text("Respaldo", style = MaterialTheme.typography.titleMedium)
+            cloudCard()
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(

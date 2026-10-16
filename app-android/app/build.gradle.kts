@@ -50,6 +50,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.biometric)
+    implementation(libs.play.services.auth)
+    implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.exifinterface)
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)

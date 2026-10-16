@@ -49,6 +49,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hilvana.app.data.Item
 import com.hilvana.app.data.ItemType
 import com.hilvana.app.ui.screens.CalendarScreen
+import com.hilvana.app.ui.screens.CloudBackupCard
 import com.hilvana.app.ui.stats.StatsScreen
 import com.hilvana.app.ui.stats.StatsCalculator
 import com.hilvana.app.ui.components.DailyGoalCard
@@ -210,6 +211,20 @@ fun HilvanaRoot(
             onThemeModeChange = onThemeModeChange,
             dynamicColor = dynamicColor,
             onDynamicColorChange = onDynamicColorChange,
+            cloudCard = {
+                val cloud by viewModel.cloud.collectAsStateWithLifecycle()
+                val authIntent by viewModel.cloudAuthIntent.collectAsStateWithLifecycle()
+                CloudBackupCard(
+                    state = cloud,
+                    authIntent = authIntent,
+                    onAuthResult = viewModel::onCloudAuthResult,
+                    onConnect = viewModel::connectGoogle,
+                    onBackupNow = viewModel::cloudBackupNow,
+                    onRestore = viewModel::cloudRestore,
+                    onAutoBackupChange = viewModel::setCloudAutoBackup,
+                    onDisconnect = viewModel::disconnectGoogle,
+                )
+            },
         )
         return
     }

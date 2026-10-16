@@ -27,6 +27,25 @@ class UserPrefs(context: Context) {
         get() = prefs.getLong(KEY_LAST_BACKUP, 0L)
         set(value) = prefs.edit { putLong(KEY_LAST_BACKUP, value) }
 
+    /** Cuenta de Google conectada para el respaldo en Drive (vacío = no conectada). */
+    var googleEmail: String
+        get() = prefs.getString(KEY_GOOGLE_EMAIL, "").orEmpty()
+        set(value) = prefs.edit { putString(KEY_GOOGLE_EMAIL, value) }
+
+    var googleName: String
+        get() = prefs.getString(KEY_GOOGLE_NAME, "").orEmpty()
+        set(value) = prefs.edit { putString(KEY_GOOGLE_NAME, value) }
+
+    /** Respaldo automático diario en Drive. */
+    var cloudAutoBackup: Boolean
+        get() = prefs.getBoolean(KEY_CLOUD_AUTO, true)
+        set(value) = prefs.edit { putBoolean(KEY_CLOUD_AUTO, value) }
+
+    /** Cuándo se subió el último respaldo a Drive (0 = nunca). */
+    var cloudLastBackupAt: Long
+        get() = prefs.getLong(KEY_CLOUD_LAST, 0L)
+        set(value) = prefs.edit { putLong(KEY_CLOUD_LAST, value) }
+
     /** Apariencia: claro, oscuro o como el sistema. */
     var themeMode: ThemeMode
         get() = ThemeMode.entries.firstOrNull { it.name == prefs.getString(KEY_THEME, null) } ?: ThemeMode.SYSTEM
@@ -58,6 +77,10 @@ class UserPrefs(context: Context) {
         set(value) = prefs.edit { putLong(KEY_NEXT_NUDGE, value) }
 
     private companion object {
+        const val KEY_GOOGLE_EMAIL = "google_email"
+        const val KEY_GOOGLE_NAME = "google_name"
+        const val KEY_CLOUD_AUTO = "cloud_auto_backup"
+        const val KEY_CLOUD_LAST = "cloud_last_backup_at"
         const val KEY_THEME = "theme_mode"
         const val KEY_DYNAMIC_COLOR = "dynamic_color"
         const val KEY_DAILY_GOAL = "daily_goal"
