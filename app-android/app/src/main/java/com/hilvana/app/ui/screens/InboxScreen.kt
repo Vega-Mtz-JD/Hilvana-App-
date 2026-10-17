@@ -17,7 +17,7 @@ import com.hilvana.app.data.Item
 import com.hilvana.app.ui.components.EmptyState
 import com.hilvana.app.ui.components.ItemCard
 
-/** Todo lo capturado sin revisar. Al tocar ✓ sale de la Bandeja (sigue en Notas/Tareas). */
+/** Todo lo capturado sin revisar. Al marcarlo sale de la Bandeja (sigue en Notas/Tareas). */
 @Composable
 fun InboxScreen(
     items: List<Item>,
@@ -34,11 +34,11 @@ fun InboxScreen(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (inbox.isEmpty()) {
-            item { EmptyState("Bandeja vacía ✨\nTodo lo que captures con la burbuja llega aquí.") }
+            item { EmptyState("Bandeja vacía\nTodo lo que captures con la burbuja llega aquí.") }
         } else {
             item {
                 Text(
-                    "Revisa lo capturado: tócalo para editarlo o cambiarle el tipo, y ✓ cuando esté listo.",
+                    "Revisa lo capturado: tócalo para editarlo o cambiarle el tipo, y márcalo cuando esté listo.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

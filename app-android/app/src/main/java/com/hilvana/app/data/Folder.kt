@@ -11,25 +11,24 @@ import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import java.text.Normalizer
 
-/** Carpeta personalizada de notas: "💡 Ideas", "🔗 Links", "🔑 Claves"… */
+/** Carpeta personalizada de notas: Ideas, Links, Claves… */
 @Entity(tableName = "folders")
 data class Folder(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
-    val emoji: String = DEFAULT_EMOJI,
+    /** Clave del ícono ("lightbulb"); la columna se llama emoji porque antes guardaba uno. */
+    @ColumnInfo(name = "emoji") val icon: String = DEFAULT_ICON,
     val createdAt: Long = System.currentTimeMillis(),
     /** Protegida: sus notas se ocultan hasta desbloquear con huella o PIN. */
     @ColumnInfo(defaultValue = "0") val locked: Boolean = false,
     /** Categoría que agrupa carpetas ("Trabajo", "Tecnología"…); null = sin categoría. */
     val category: String? = null,
 ) {
-    val label: String get() = "$emoji $name" + if (locked) " 🔒" else ""
-
     /** "¿Esta carpeta se llama así?" sin importar mayúsculas ni acentos. */
     fun matches(name: String): Boolean = normalize(this.name) == normalize(name)
 
     companion object {
-        const val DEFAULT_EMOJI = "📁"
+        const val DEFAULT_ICON = "folder"
 
         private fun normalize(text: String): String =
             Normalizer.normalize(text.trim().lowercase(), Normalizer.Form.NFD)

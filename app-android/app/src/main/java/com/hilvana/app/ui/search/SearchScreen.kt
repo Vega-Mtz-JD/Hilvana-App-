@@ -43,9 +43,11 @@ import com.hilvana.app.data.Item
 import com.hilvana.app.data.ItemType
 import com.hilvana.app.ui.components.EmptyState
 import com.hilvana.app.ui.components.ItemCard
-import com.hilvana.app.ui.components.emoji
+import com.hilvana.app.ui.components.ChipIcon
+import com.hilvana.app.ui.components.HilvanaIcons
+import com.hilvana.app.ui.components.icon
 
-/** 🔍 Buscar en todo, con filtros rápidos y las palabras resaltadas. */
+/** Buscar en todo, con filtros rápidos y las palabras resaltadas. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
@@ -118,7 +120,8 @@ fun SearchScreen(
                         FilterChip(
                             selected = type == option,
                             onClick = { type = if (type == option) null else option },
-                            label = { Text("${option.emoji} ${option.label}") },
+                            label = { Text(option.label) },
+                            leadingIcon = { ChipIcon(option.icon) },
                         )
                     }
                 }
@@ -128,10 +131,10 @@ fun SearchScreen(
                     modifier = Modifier.horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    FilterChip(selected = withLink, onClick = { withLink = !withLink }, label = { Text("🔗 Con enlace") })
-                    FilterChip(selected = withImage, onClick = { withImage = !withImage }, label = { Text("📷 Con imagen") })
-                    FilterChip(selected = important, onClick = { important = !important }, label = { Text("⭐ Importantes") })
-                    FilterChip(selected = includeDone, onClick = { includeDone = !includeDone }, label = { Text("✓ Incluir hechas") })
+                    FilterChip(selected = withLink, onClick = { withLink = !withLink }, label = { Text("Con enlace") }, leadingIcon = { ChipIcon(HilvanaIcons.Link) })
+                    FilterChip(selected = withImage, onClick = { withImage = !withImage }, label = { Text("Con imagen") }, leadingIcon = { ChipIcon(HilvanaIcons.Image) })
+                    FilterChip(selected = important, onClick = { important = !important }, label = { Text("Importantes") }, leadingIcon = { ChipIcon(HilvanaIcons.Star) })
+                    FilterChip(selected = includeDone, onClick = { includeDone = !includeDone }, label = { Text("Incluir hechas") }, leadingIcon = { ChipIcon(HilvanaIcons.Task) })
                 }
             }
 
@@ -140,7 +143,7 @@ fun SearchScreen(
                     EmptyState("Escribe algo o toca un filtro.\nBusca en el texto, los pasos y las carpetas.")
                 }
                 results.isEmpty() -> item {
-                    EmptyState("Nada encontrado" + if (!includeDone) ".\nPrueba con \"✓ Incluir hechas\"." else ".")
+                    EmptyState("Nada encontrado" + if (!includeDone) ".\nPrueba con \"Incluir hechas\"." else ".")
                 }
                 else -> item {
                     Text(

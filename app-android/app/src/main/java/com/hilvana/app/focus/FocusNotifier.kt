@@ -19,7 +19,7 @@ import com.hilvana.app.data.progressText
 import com.hilvana.app.database
 
 /**
- * 🎯 Tareas en prioridad: una notificación fija (también en la pantalla de bloqueo) con
+ * Tareas en prioridad: una notificación fija (también en la pantalla de bloqueo) con
  * la tarea, su avance y el siguiente paso, para avanzar SIN abrir la app.
  */
 object FocusNotifier {
@@ -81,20 +81,20 @@ object FocusNotifier {
         val next = first.checklist.nextStep
 
         val title = when {
-            nudge -> "🎯 ¿Avanzaste? ${first.text}"
-            pinned.size == 1 -> "🎯 En prioridad: ${first.text}"
-            else -> "🎯 En prioridad (${pinned.size})"
+            nudge -> "¿Avanzaste? ${first.text}"
+            pinned.size == 1 -> "En prioridad: ${first.text}"
+            else -> "En prioridad (${pinned.size})"
         }
         val summary = buildString {
             if (pinned.size > 1) append(first.text).append(" · ")
             if (first.checklist.isNotEmpty()) append("${first.checklist.progressText} pasos")
             if (next != null) append(" · Sigue: ${next.text}")
-            if (isEmpty()) append("Toca ✓ Hecho cuando la termines")
+            if (isEmpty()) append("Toca Hecho cuando la termines")
         }
         val style = NotificationCompat.InboxStyle().also { inbox ->
             pinned.forEach { item ->
                 inbox.addLine(buildString {
-                    append("☐ ").append(item.text)
+                    append("• ").append(item.text)
                     if (item.checklist.isNotEmpty()) append(" · ").append(item.checklist.progressText)
                     item.checklist.nextStep?.let { append(" → ").append(it.text) }
                 })
@@ -115,9 +115,9 @@ object FocusNotifier {
             .setOnlyAlertOnce(!nudge)
 
         if (next != null) {
-            builder.addAction(0, "✓ ${next.text.take(24)}", FocusActionReceiver.stepIntent(context, first.id))
+            builder.addAction(0, "Paso: ${next.text.take(22)}", FocusActionReceiver.stepIntent(context, first.id))
         }
-        builder.addAction(0, "✓ Hecho", FocusActionReceiver.doneIntent(context, first.id))
+        builder.addAction(0, "Hecho", FocusActionReceiver.doneIntent(context, first.id))
 
         if (nudge) {
             builder.setAutoCancel(true).setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -131,7 +131,7 @@ object FocusNotifier {
             builder.setPublicVersion(
                 NotificationCompat.Builder(context, CHANNEL_FOCUS)
                     .setSmallIcon(R.drawable.ic_stat_hilvana).setColor(ContextCompat.getColor(context, R.color.hilvana_teal))
-                    .setContentTitle("🎯 ${pinned.size} ${if (pinned.size == 1) "tarea" else "tareas"} en prioridad")
+                    .setContentTitle("${pinned.size} ${if (pinned.size == 1) "tarea" else "tareas"} en prioridad")
                     .build()
             )
         } else {

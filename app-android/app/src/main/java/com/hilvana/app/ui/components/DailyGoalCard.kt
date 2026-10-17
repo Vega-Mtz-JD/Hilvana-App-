@@ -26,7 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 /**
- * 🎯 Meta de hoy: cuántas cosas completaste de tu meta diaria, con barra de avance
+ * Meta de hoy: cuántas cosas completaste de tu meta diaria, con barra de avance
  * y la racha. Tocarla abre el selector de meta.
  */
 @Composable
@@ -50,7 +50,7 @@ fun DailyGoalCard(
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (goal == 0) {
-                Text("🎯 Sin meta diaria", style = MaterialTheme.typography.titleSmall)
+                IconText(HilvanaIcons.Goal, "Sin meta diaria")
                 Text(
                     "Hoy completaste $completedToday. Toca para ponerte una meta.",
                     style = MaterialTheme.typography.bodySmall,
@@ -58,9 +58,9 @@ fun DailyGoalCard(
                 return@Column
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    if (reached) "🎉 ¡Meta cumplida!" else "🎯 Meta de hoy",
-                    style = MaterialTheme.typography.titleSmall,
+                IconText(
+                    if (reached) HilvanaIcons.Celebrate else HilvanaIcons.Goal,
+                    if (reached) "¡Meta cumplida!" else "Meta de hoy",
                     modifier = Modifier.weight(1f),
                 )
                 Text("$completedToday / $goal", style = MaterialTheme.typography.titleMedium)
@@ -73,10 +73,12 @@ fun DailyGoalCard(
                     .fillMaxWidth()
                     .height(8.dp),
             )
-            Text(
-                "🔥 Racha: $streak ${if (streak == 1) "día" else "días"} cumpliendo la meta",
+            IconText(
+                HilvanaIcons.Streak,
+                "Racha: $streak ${if (streak == 1) "día" else "días"} cumpliendo la meta",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                iconSize = 16.dp,
             )
         }
     }

@@ -7,7 +7,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
+import androidx.glance.ColorFilter
 import androidx.glance.GlanceModifier
+import androidx.glance.Image
+import androidx.glance.ImageProvider
 import androidx.glance.GlanceTheme
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.actionParametersOf
@@ -28,6 +31,8 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
+import androidx.glance.layout.size
+import androidx.glance.layout.width
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
@@ -36,6 +41,7 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextDecoration
 import androidx.glance.text.TextStyle
+import com.hilvana.app.R
 import com.hilvana.app.MainActivity
 import com.hilvana.app.data.Item
 import com.hilvana.app.data.UserPrefs
@@ -45,7 +51,7 @@ import com.hilvana.app.focus.FocusActions
 import com.hilvana.app.repository
 
 /**
- * Widget "🎯 En prioridad": la primera tarea en prioridad con su checklist (se marca cada paso
+ * Widget "En prioridad": la primera tarea en prioridad con su checklist (se marca cada paso
  * desde la pantalla de inicio) y debajo las demás tareas en prioridad.
  */
 class FocusWidget : GlanceAppWidget() {
@@ -77,16 +83,25 @@ private fun FocusContent(tasks: List<Item>, hideText: Boolean) {
             .padding(12.dp),
     ) {
         val first = tasks.firstOrNull()
-        Text(
-            when {
-                first == null -> "🎯 En prioridad"
-                hideText -> "🎯 ${tasks.size} en prioridad"
-                else -> "🎯 " + first.text
-            },
-            maxLines = 2,
-            style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = GlanceTheme.colors.onSurface),
-            modifier = GlanceModifier.clickable(actionStartActivity<MainActivity>()),
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Image(
+                provider = ImageProvider(R.drawable.ic_widget_flag),
+                contentDescription = "En prioridad",
+                colorFilter = ColorFilter.tint(GlanceTheme.colors.primary),
+                modifier = GlanceModifier.size(18.dp),
+            )
+            Spacer(GlanceModifier.width(6.dp))
+            Text(
+                when {
+                    first == null -> "En prioridad"
+                    hideText -> "${tasks.size} en prioridad"
+                    else -> first.text
+                },
+                maxLines = 2,
+                style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = GlanceTheme.colors.onSurface),
+                modifier = GlanceModifier.clickable(actionStartActivity<MainActivity>()),
+            )
+        }
         if (first != null && !hideText && first.checklist.isNotEmpty()) {
             Text(
                 "${first.checklist.progressText} pasos",
@@ -101,7 +116,7 @@ private fun FocusContent(tasks: List<Item>, hideText: Boolean) {
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    "Fija una tarea con 🎯 para verla aquí",
+                    "Pon una tarea en prioridad para verla aquí",
                     style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurfaceVariant),
                 )
             }
@@ -109,7 +124,7 @@ private fun FocusContent(tasks: List<Item>, hideText: Boolean) {
                 modifier = GlanceModifier.fillMaxSize().clickable(actionStartActivity<MainActivity>()),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("🔒 Abre Hilvana para verlas", style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurfaceVariant))
+                Text("Abre Hilvana para verlas", style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurfaceVariant))
             }
             else -> {
                 // Pasos de la primera (o "Hecho" si no tiene), luego las otras tareas.
@@ -158,7 +173,7 @@ private fun FocusRow(row: FocusLine) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "🎯 " + row.task.text + if (row.task.checklist.isNotEmpty()) " · ${row.task.checklist.progressText}" else "",
+                "• " + row.task.text + if (row.task.checklist.isNotEmpty()) " · ${row.task.checklist.progressText}" else "",
                 maxLines = 1,
                 style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurfaceVariant),
             )

@@ -19,6 +19,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.hilvana.app.reminder.QuickTime
+import com.hilvana.app.ui.components.ChipIcon
+import com.hilvana.app.ui.components.HilvanaIcons
+import com.hilvana.app.ui.components.IconText
 import com.hilvana.app.ui.components.MonthPicker
 import com.hilvana.app.ui.formatDue
 import java.time.LocalDate
@@ -43,13 +46,15 @@ fun ReminderPicker(
     var showCalendar by remember { mutableStateOf(false) }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            dueAt?.let { "⏰ " + formatDue(it) } ?: "¿Cuándo te aviso?",
+        IconText(
+            HilvanaIcons.Reminder,
+            dueAt?.let { formatDue(it) } ?: "¿Cuándo te aviso?",
             style = MaterialTheme.typography.labelLarge,
         )
         if (dueAt != null && dueAt < System.currentTimeMillis()) {
-            Text(
-                "⚠️ Esa hora ya pasó",
+            IconText(
+                HilvanaIcons.Warning,
+                "Esa hora ya pasó",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
             )
@@ -74,7 +79,8 @@ fun ReminderPicker(
                     showCalendar = !showCalendar
                     if (showCalendar) onOpenCalendar()
                 },
-                label = { Text("📅 Otro día…") },
+                label = { Text("Otro día…") },
+                leadingIcon = { ChipIcon(HilvanaIcons.Calendar) },
             )
         }
 

@@ -21,7 +21,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -44,6 +46,7 @@ import com.hilvana.app.data.UserPrefs
 import com.hilvana.app.data.formatDuration
 import com.hilvana.app.focus.FocusActions
 import com.hilvana.app.repository
+import com.hilvana.app.ui.components.HilvanaIcons
 import com.hilvana.app.ui.theme.HilvanaTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -288,12 +291,12 @@ private fun RecordingOverlay(elapsedMs: () -> Long, onStop: () -> Unit, onCancel
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("🎙️", style = MaterialTheme.typography.displayLarge)
+            Icon(HilvanaIcons.VoiceNote, contentDescription = null, tint = Color.White, modifier = Modifier.size(64.dp))
             Text("Grabando…", style = MaterialTheme.typography.headlineSmall, color = Color.White)
             Text(formatDuration(elapsed), style = MaterialTheme.typography.displaySmall, color = Color.White)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(onClick = onCancel) { Text("Cancelar", color = Color.White) }
-                Button(onClick = onStop) { Text("Detener ✓") }
+                Button(onClick = onStop) { Text("Detener") }
             }
         }
     }

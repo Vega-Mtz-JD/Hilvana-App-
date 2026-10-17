@@ -5,9 +5,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -69,9 +73,14 @@ fun AudioPlayer(
             .padding(end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TextButton(onClick = ::toggle) { Text(if (playing) "⏸" else "▶️") }
+        IconButton(onClick = ::toggle) {
+            Icon(
+                if (playing) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                contentDescription = if (playing) "Pausar" else "Reproducir",
+            )
+        }
         Text(
-            "🎙️ " + (if (playing || position > 0) "${formatDuration(position)} / " else "") +
+            (if (playing || position > 0) "${formatDuration(position)} / " else "") +
                 formatDuration(durationMs ?: 0),
             style = MaterialTheme.typography.labelMedium,
         )

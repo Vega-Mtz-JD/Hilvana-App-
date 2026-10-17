@@ -87,7 +87,7 @@ fun ImageViewer(path: String, onDismiss: () -> Unit) {
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(16.dp),
-            ) { Text("Cerrar ✕", color = Color.White) }
+            ) { Text("Cerrar", color = Color.White) }
         }
     }
 }

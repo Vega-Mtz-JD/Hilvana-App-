@@ -3,6 +3,8 @@ package com.hilvana.app.ui.screens
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
@@ -12,6 +14,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilledIconToggleButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -28,27 +32,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.hilvana.app.data.Folder
+import com.hilvana.app.ui.components.ChipIcon
+import com.hilvana.app.ui.components.FolderIcons
+import com.hilvana.app.ui.components.HilvanaIcons
+import com.hilvana.app.ui.components.IconText
 
 /** Ideas de carpetas para empezar (los ejemplos de uso del plan). */
 private val SUGGESTIONS = listOf(
-    "💡" to "Ideas",
-    "🔑" to "Claves",
-    "🔗" to "Links",
-    "🎬" to "Videos",
-    "🧠" to "Descubrimientos",
-    "📷" to "Capturas",
-    "🛒" to "Compras",
-    "📚" to "Aprender",
+    "lightbulb" to "Ideas",
+    "key" to "Claves",
+    "link" to "Links",
+    "movie" to "Videos",
+    "psychology" to "Descubrimientos",
+    "camera" to "Capturas",
+    "cart" to "Compras",
+    "book" to "Aprender",
 )
 
 /** Categorías de ejemplo; el usuario puede escribir la que quiera. */
 private val CATEGORY_SUGGESTIONS = listOf("Personal", "Trabajo", "Tecnología", "Estudios", "Hogar")
 
-private val EMOJIS = listOf(
-    "📁", "💡", "🔑", "🔗", "🎬", "🧠", "📷", "🛒", "📚", "⭐", "❤️", "💼", "🏠", "✈️", "🎵", "🍳",
-)
-
-/** Crear o editar una carpeta: nombre, emoji y (si ya existe) borrarla. */
+/** Crear o editar una carpeta: nombre, ícono, categoría y (si ya existe) borrarla. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun FolderDialog(
     folder: Folder,
@@ -63,7 +68,7 @@ fun FolderDialog(
 ) {
     val isNew = folder.id == 0L
     var name by rememberSaveable { mutableStateOf(folder.name) }
-    var emoji by rememberSaveable { mutableStateOf(folder.emoji) }
+    var icon by rememberSaveable { mutableStateOf(FolderIcons.key(folder.icon)) }
     var locked by rememberSaveable { mutableStateOf(folder.locked) }
     var category by rememberSaveable { mutableStateOf(folder.category.orEmpty()) }
     var confirmDelete by remember { mutableStateOf(false) }
@@ -88,15 +93,16 @@ fun FolderDialog(
                     ) {
                         SUGGESTIONS
                             .filter { (_, suggested) -> existingNames.none { Folder(name = it).matches(suggested) } }
-                            .forEach { (suggestedEmoji, suggestedName) ->
+                            .forEach { (suggestedIcon, suggestedName) ->
                                 AssistChip(
                                     onClick = {
                                         name = suggestedName
-                                        emoji = suggestedEmoji
+                                        icon = suggestedIcon
                                         // Las claves se protegen por defecto.
                                         if (suggestedName == "Claves" && canLock) locked = true
                                     },
-                                    label = { Text("$suggestedEmoji $suggestedName") },
+                                    label = { Text(suggestedName) },
+                                    leadingIcon = { ChipIcon(FolderIcons.icon(suggestedIcon)) },
                                 )
                             }
                     }
@@ -145,22 +151,27 @@ fun FolderDialog(
                 }
 
                 Text("Ícono", style = MaterialTheme.typography.labelLarge)
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    EMOJIS.forEach { option ->
-                        FilterChip(
-                            selected = emoji == option,
-                            onClick = { emoji = option },
-                            label = { Text(option) },
-                        )
+                    FolderIcons.options.forEach { (key, vector) ->
+                        FilledIconToggleButton(
+                            checked = icon == key,
+                            onCheckedChange = { icon = key },
+                        ) {
+                            Icon(vector, contentDescription = null)
+                        }
                     }
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("🔒 Proteger con huella o PIN", style = MaterialTheme.typography.labelLarge)
+                        IconText(
+                            HilvanaIcons.Lock,
+                            "Proteger con huella o PIN",
+                            style = MaterialTheme.typography.labelLarge,
+                        )
                         Text(
                             if (canLock) {
                                 "Sus notas se ocultan hasta que desbloquees."
@@ -212,7 +223,7 @@ fun FolderDialog(
                     val typed = category.trim()
                     val finalCategory = existingCategories.firstOrNull { Folder(name = it).matches(typed) }
                         ?: typed.ifEmpty { null }
-                    onSave(folder.copy(name = trimmed, emoji = emoji, locked = locked, category = finalCategory))
+                    onSave(folder.copy(name = trimmed, icon = icon, locked = locked, category = finalCategory))
                 },
                 enabled = canSave,
             ) { Text(if (isNew) "Crear" else "Guardar") }

@@ -54,6 +54,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.hilvana.app.data.Folder
 import com.hilvana.app.data.ImageStore
 import com.hilvana.app.data.Item
+import com.hilvana.app.ui.components.ChipIcon
+import com.hilvana.app.ui.components.HilvanaIcons
+import com.hilvana.app.ui.components.IconText
+import com.hilvana.app.ui.components.iconVector
 import com.hilvana.app.ui.components.ImageViewer
 import com.hilvana.app.ui.components.ItemImage
 import androidx.compose.runtime.mutableIntStateOf
@@ -187,7 +191,7 @@ fun ItemEditorSheet(
                 }
             } else {
                 OutlinedButton(onClick = { pickImage.launch(PickVisualMediaRequest(ImageOnly)) }) {
-                    Text("📷 Agregar imagen")
+                    IconText(HilvanaIcons.Image, "Agregar imagen", style = MaterialTheme.typography.labelLarge)
                 }
             }
 
@@ -207,7 +211,8 @@ fun ItemEditorSheet(
                         FilterChip(
                             selected = folderId == folder.id,
                             onClick = { folderId = folder.id },
-                            label = { Text(folder.label) },
+                            label = { Text(folder.name) },
+                            leadingIcon = { ChipIcon(folder.iconVector) },
                         )
                     }
                 }
@@ -230,7 +235,7 @@ fun ItemEditorSheet(
 
                 Text("Fecha y hora", style = MaterialTheme.typography.labelLarge)
                 Text(
-                    text = dueAt?.let { "⏰ " + formatDue(it) }
+                    text = dueAt?.let { formatDue(it) }
                         ?: if (type == ItemType.REMINDER) "Elige cuándo avisarte" else "Sin fecha",
                     style = MaterialTheme.typography.bodyLarge,
                 )
@@ -241,7 +246,11 @@ fun ItemEditorSheet(
                     QuickTime.available().forEach { option ->
                         AssistChip(onClick = { dueAt = option.toMillis() }, label = { Text(option.label) })
                     }
-                    AssistChip(onClick = { showDatePicker = true }, label = { Text("📅 Elegir…") })
+                    AssistChip(
+                        onClick = { showDatePicker = true },
+                        label = { Text("Elegir…") },
+                        leadingIcon = { ChipIcon(HilvanaIcons.Calendar) },
+                    )
                     if (dueAt != null && type == ItemType.TASK) {
                         AssistChip(onClick = { dueAt = null }, label = { Text("Quitar fecha") })
                     }
@@ -251,7 +260,7 @@ fun ItemEditorSheet(
                     RepeatSelector(repeat = repeat, onChange = { repeat = it })
                 } else {
                     Text(
-                        "🔁 Para que se repita, primero elige una fecha.",
+                        "Para que se repita, primero elige una fecha.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -291,7 +300,7 @@ fun ItemEditorSheet(
                         onSave(
                             item.copy(
                                 // Una imagen sola también es una nota válida.
-                                text = text.trim().ifBlank { if (imagePath != null) "📷 Imagen" else "🎙️ Nota de voz" },
+                                text = text.trim().ifBlank { if (imagePath != null) "Imagen" else "Nota de voz" },
                                 imagePath = imagePath,
                                 type = type,
                                 dueAt = if (canHaveDate) dueAt else null,

@@ -18,9 +18,11 @@ import androidx.compose.ui.unit.dp
 import com.hilvana.app.data.Item
 import com.hilvana.app.data.nextStep
 import com.hilvana.app.data.progressText
+import com.hilvana.app.ui.components.HilvanaIcons
+import com.hilvana.app.ui.components.IconText
 
 /**
- * Franja "🎯 En prioridad" arriba del panel de captura: al abrir la burbuja ves tus tareas
+ * Franja "En prioridad" arriba del panel de captura: al abrir la burbuja ves tus tareas
  * en prioridad y avanzas un paso o la marcas hecha, sin salir de lo que estás haciendo.
  */
 @Composable
@@ -36,7 +38,7 @@ fun FocusStrip(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
     ) {
         Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-            Text("🎯 En prioridad", style = MaterialTheme.typography.labelLarge)
+            IconText(HilvanaIcons.Priority, "En prioridad", style = MaterialTheme.typography.labelLarge)
             if (hideText) {
                 // Con la app bloqueada no se muestra el texto encima de otras apps.
                 Text(
@@ -61,8 +63,8 @@ fun FocusStrip(
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
-                        if (next != null) TextButton(onClick = { onStep(task) }) { Text("✓ Paso") }
-                        TextButton(onClick = { onDone(task) }) { Text("✓ Hecho") }
+                        if (next != null) TextButton(onClick = { onStep(task) }) { Text("Paso") }
+                        TextButton(onClick = { onDone(task) }) { Text("Hecho") }
                     }
                 }
             }

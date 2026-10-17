@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -119,13 +120,29 @@ fun ItemCard(
                             color = StarColor,
                         )
                     }
+                    val metaIconModifier = Modifier
+                        .padding(end = 4.dp)
+                        .size(14.dp)
+                    if (item.pinned && !item.done) {
+                        Icon(
+                            HilvanaIcons.Priority,
+                            contentDescription = "En prioridad",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = metaIconModifier,
+                        )
+                    }
+                    Icon(
+                        folder?.iconVector ?: item.type.icon,
+                        contentDescription = null,
+                        tint = if (folder == null) item.type.color else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = metaIconModifier,
+                    )
                     Text(
                         text = buildString {
-                            if (item.pinned && !item.done) append("🎯 ")
-                            append(folder?.label ?: "${item.type.emoji} ${item.type.label}")
-                            if (item.checklist.isNotEmpty()) append(" · ☑ ").append(item.checklist.progressText)
+                            append(folder?.name ?: item.type.label)
+                            if (item.checklist.isNotEmpty()) append(" · Pasos ").append(item.checklist.progressText)
                             item.dueAt?.let { append(" · ").append(formatDue(it)) }
-                            item.repeatRule?.let { append(" · 🔁 ").append(it.label) }
+                            item.repeatRule?.let { append(" · ").append(it.label) }
                         },
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -155,7 +172,9 @@ fun ItemCard(
                 }
                 when {
                     hasPreview -> LinkPreviewRow(item, onOpen = openLink)
-                    link != null -> TextButton(onClick = openLink) { Text("🔗 Abrir enlace") }
+                    link != null -> TextButton(onClick = openLink) {
+                        IconText(HilvanaIcons.Link, "Abrir enlace", style = MaterialTheme.typography.labelLarge)
+                    }
                 }
                 item.audioPath?.let { path ->
                     AudioPlayer(path = path, durationMs = item.audioDurationMs)
@@ -196,7 +215,7 @@ private fun LinkPreviewRow(item: Item, onOpen: () -> Unit) {
                 )
             }
             Text(
-                "🔗 " + (item.linkSite ?: "Abrir enlace") + "  ↗",
+                (item.linkSite ?: "Abrir enlace") + "  ↗",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
                 maxLines = 1,

@@ -178,7 +178,7 @@ class ItemsViewModel(application: Application) : AndroidViewModel(application) {
                 CloudAction.CONNECT -> {
                     CloudBackup.onConnected(app, token)
                     val result = CloudBackup.backupNow(app, token)
-                    "Conectado ✓ Primer respaldo en Drive: ${result.items} elementos"
+                    "Conectado. Primer respaldo en Drive: ${result.items} elementos"
                 }
                 CloudAction.BACKUP -> {
                     val result = CloudBackup.backupNow(app, token)

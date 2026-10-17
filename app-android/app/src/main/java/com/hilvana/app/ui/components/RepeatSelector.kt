@@ -21,7 +21,7 @@ fun RepeatSelector(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text("🔁 ¿Se repite?", style = MaterialTheme.typography.labelLarge)
+        IconText(HilvanaIcons.Repeat, "¿Se repite?", style = MaterialTheme.typography.labelLarge)
         Row(
             modifier = Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),

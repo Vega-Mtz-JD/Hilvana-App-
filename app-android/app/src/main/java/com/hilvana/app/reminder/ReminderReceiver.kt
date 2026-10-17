@@ -77,7 +77,7 @@ class ReminderReceiver : BroadcastReceiver() {
             .setContentIntent(openApp)
             .setAutoCancel(true)
             .addAction(0, "Posponer 15 min", ReminderActionReceiver.snoozeIntent(context, item.id))
-            .addAction(0, "✓ Hecho", ReminderActionReceiver.doneIntent(context, item.id))
+            .addAction(0, "Hecho", ReminderActionReceiver.doneIntent(context, item.id))
             .build()
 
         try {

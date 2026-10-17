@@ -27,13 +27,13 @@ abstract class HilvanaDatabase : RoomDatabase() {
         private fun insertIdeasFolder(db: SupportSQLiteDatabase) {
             db.execSQL(
                 "INSERT INTO folders (name, emoji, createdAt) VALUES (?, ?, ?)",
-                arrayOf<Any>("Ideas", "💡", System.currentTimeMillis()),
+                arrayOf<Any>("Ideas", "lightbulb", System.currentTimeMillis()),
             )
         }
 
         /**
          * v1 → v2: llegan las carpetas y se unifican Idea y Nota. Las ideas que ya
-         * existían pasan a ser notas dentro de la carpeta "💡 Ideas".
+         * existían pasan a ser notas dentro de la carpeta "Ideas".
          */
         private val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {

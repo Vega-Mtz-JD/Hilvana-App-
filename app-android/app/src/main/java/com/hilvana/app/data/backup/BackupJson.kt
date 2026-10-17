@@ -35,7 +35,7 @@ object BackupJson {
                 JSONObject()
                     .put("id", folder.id)
                     .put("name", folder.name)
-                    .put("emoji", folder.emoji)
+                    .put("emoji", folder.icon)
                     .put("createdAt", folder.createdAt)
                     .put("locked", folder.locked)
                     .put("category", folder.category ?: JSONObject.NULL)
@@ -78,7 +78,7 @@ object BackupJson {
             Folder(
                 id = f.getLong("id"),
                 name = f.getString("name"),
-                emoji = f.optString("emoji", Folder.DEFAULT_EMOJI),
+                icon = f.optString("emoji", Folder.DEFAULT_ICON),
                 createdAt = f.optLong("createdAt", System.currentTimeMillis()),
                 locked = f.optBoolean("locked", false),
                 category = if (f.isNull("category")) null else f.optString("category").ifBlank { null },

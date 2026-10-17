@@ -8,12 +8,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.AlertDialog
@@ -43,8 +45,11 @@ import com.hilvana.app.data.Folder
 import com.hilvana.app.data.Item
 import com.hilvana.app.data.ItemType
 import com.hilvana.app.ui.components.EmptyState
+import com.hilvana.app.ui.components.HilvanaIcons
+import com.hilvana.app.ui.components.IconText
 import com.hilvana.app.ui.components.ItemCard
 import com.hilvana.app.ui.components.SectionHeader
+import com.hilvana.app.ui.components.iconVector
 
 private const val FOLDER_COLUMNS = 3
 
@@ -64,7 +69,7 @@ fun NotesScreen(
     onDeleteFolder: (Folder) -> Unit,
     /** Renombrar una categoría en todas sus carpetas (null = quitarla). */
     onRenameCategory: (String, String?) -> Unit,
-    /** false: las carpetas protegidas muestran 🔒 en lugar de cuántas notas tienen. */
+    /** false: las carpetas protegidas dicen "Protegida" en lugar de cuántas notas tienen. */
     unlocked: Boolean,
     canLockFolders: Boolean,
     modifier: Modifier = Modifier,
@@ -156,13 +161,23 @@ fun NotesScreen(
                     IconButton(onClick = { onOpenFolder(null) }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver a carpetas")
                     }
-                    Text(
-                        openFolder.label,
+                    IconText(
+                        openFolder.iconVector,
+                        openFolder.name,
                         style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.weight(1f),
+                        iconTint = MaterialTheme.colorScheme.primary,
+                        iconSize = 24.dp,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
                     )
+                    if (openFolder.locked) {
+                        Icon(
+                            HilvanaIcons.Lock,
+                            contentDescription = "Protegida",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
                     IconButton(onClick = { editingFolder = openFolder }) {
                         Icon(Icons.Filled.Edit, contentDescription = "Editar carpeta")
                     }
@@ -307,7 +322,14 @@ private fun FolderTile(
                 .padding(vertical = 12.dp, horizontal = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(folder.emoji, style = MaterialTheme.typography.headlineMedium)
+            Icon(
+                folder.iconVector,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .padding(bottom = 4.dp)
+                    .size(30.dp),
+            )
             Text(
                 folder.name,
                 style = MaterialTheme.typography.titleSmall,
@@ -317,7 +339,7 @@ private fun FolderTile(
             )
             Text(
                 when {
-                    hidden -> "🔒 Protegida"
+                    hidden -> "Protegida"
                     count == 1 -> "1 nota"
                     else -> "$count notas"
                 },
@@ -337,7 +359,14 @@ private fun NewFolderTile(onClick: () -> Unit, modifier: Modifier = Modifier) {
                 .padding(vertical = 12.dp, horizontal = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text("➕", style = MaterialTheme.typography.headlineMedium)
+            Icon(
+                Icons.Filled.Add,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .padding(bottom = 4.dp)
+                    .size(30.dp),
+            )
             Text("Nueva", style = MaterialTheme.typography.titleSmall)
             Text(
                 "carpeta",

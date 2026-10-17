@@ -21,6 +21,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.HourglassEmpty
+import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -44,6 +46,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -54,7 +57,8 @@ import com.hilvana.app.data.Item
 import com.hilvana.app.data.ItemType
 import com.hilvana.app.data.MAX_PRIORITY
 import com.hilvana.app.ui.components.color
-import com.hilvana.app.ui.components.emoji
+import com.hilvana.app.ui.components.HilvanaIcons
+import com.hilvana.app.ui.components.IconText
 import com.hilvana.app.ui.components.priorityName
 import com.hilvana.app.ui.components.starsText
 import java.time.format.DateTimeFormatter
@@ -110,7 +114,7 @@ fun StatsScreen(items: List<Item>, folders: List<Folder>, dailyGoal: Int, onBack
                         value = stats.pendingByPriority[stars],
                     )
                 }
-                if (stats.pending == 0) EmptyChart("No tienes tareas ni recordatorios pendientes 🎉")
+                if (stats.pending == 0) EmptyChart("No tienes tareas ni recordatorios pendientes")
                 else HorizontalBars(rows)
             }
             ChartCard("Notas por carpeta") {
@@ -120,7 +124,7 @@ fun StatsScreen(items: List<Item>, folders: List<Folder>, dailyGoal: Int, onBack
                     // Máximo 7 barras: el resto se junta en "Otras".
                     val top = stats.notesByFolder.take(7)
                     val others = stats.notesByFolder.drop(7).sumOf { it.second }
-                    val rows = top.map { (folder, count) -> BarRow(folder?.label ?: "Sin carpeta", count) } +
+                    val rows = top.map { (folder, count) -> BarRow(folder?.name ?: "Sin carpeta", count) } +
                         if (others > 0) listOf(BarRow("Otras", others)) else emptyList()
                     HorizontalBars(rows)
                 }
@@ -135,22 +139,24 @@ fun StatsScreen(items: List<Item>, folders: List<Folder>, dailyGoal: Int, onBack
 private fun KpiGrid(stats: Stats) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            StatTile("📦", "Guardados", "${stats.total}", null, Modifier.weight(1f))
-            StatTile("⏳", "Pendientes", "${stats.pending}", null, Modifier.weight(1f))
+            StatTile(Icons.Outlined.Inventory2, "Guardados", "${stats.total}", null, Modifier.weight(1f))
+            StatTile(Icons.Outlined.HourglassEmpty, "Pendientes", "${stats.pending}", null, Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            StatTile("✅", "Completados", "${stats.completedLast7Days}", "últimos 7 días", Modifier.weight(1f))
+            StatTile(HilvanaIcons.Task, "Completados", "${stats.completedLast7Days}", "últimos 7 días", Modifier.weight(1f))
             StatTile(
-                "🔥", "Racha", "${stats.streak} ${if (stats.streak == 1) "día" else "días"}",
+                HilvanaIcons.Streak, "Racha", "${stats.streak} ${if (stats.streak == 1) "día" else "días"}",
                 "meta ${stats.dailyGoal}/día · mejor: ${stats.bestStreak}", Modifier.weight(1f),
             )
         }
         if (stats.overdue > 0) {
             // Estado "atrasado": siempre con ícono y texto, nunca solo color.
             Card(Modifier.fillMaxWidth()) {
-                Text(
-                    "⚠️ ${stats.overdue} ${if (stats.overdue == 1) "pendiente atrasado" else "pendientes atrasados"}",
+                IconText(
+                    HilvanaIcons.Warning,
+                    "${stats.overdue} ${if (stats.overdue == 1) "pendiente atrasado" else "pendientes atrasados"}",
                     style = MaterialTheme.typography.bodyMedium,
+                    iconTint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(12.dp),
                 )
             }
@@ -159,10 +165,10 @@ private fun KpiGrid(stats: Stats) {
 }
 
 @Composable
-private fun StatTile(icon: String, label: String, value: String, sub: String?, modifier: Modifier = Modifier) {
+private fun StatTile(icon: ImageVector, label: String, value: String, sub: String?, modifier: Modifier = Modifier) {
     Card(modifier = modifier) {
         Column(Modifier.padding(12.dp)) {
-            Text("$icon $label", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            IconText(icon, label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, iconSize = 16.dp)
             Text(value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
             if (sub != null) {
                 Text(sub, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -337,7 +343,7 @@ private fun TypeBreakdown(byType: Map<ItemType, Int>) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Swatch(type.color)
             Text(
-                " ${type.emoji} ${type.label}",
+                " ${type.label}",
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.weight(1f),
             )

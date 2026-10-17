@@ -47,7 +47,7 @@ fun ChecklistEditor(
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
-            "☑️ Pasos" + if (steps.isNotEmpty()) " · ${steps.progressText}" else "",
+            "Pasos" + if (steps.isNotEmpty()) " · ${steps.progressText}" else "",
             style = MaterialTheme.typography.labelLarge,
         )
         steps.forEachIndexed { index, step ->

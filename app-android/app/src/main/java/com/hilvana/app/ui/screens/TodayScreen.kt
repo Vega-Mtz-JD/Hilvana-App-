@@ -34,7 +34,7 @@ fun TodayScreen(
         if (goalCard != null) item { goalCard() }
 
         if (groups.isEmpty) {
-            item { EmptyState("Nada pendiente hoy 🎉\nToca + o la burbuja para anotar algo.") }
+            item { EmptyState("Nada pendiente hoy\nToca + o la burbuja para anotar algo.") }
         }
         section("Atrasado", groups.overdue, onOpen, onToggleDone)
         section("Hoy", groups.today, onOpen, onToggleDone)

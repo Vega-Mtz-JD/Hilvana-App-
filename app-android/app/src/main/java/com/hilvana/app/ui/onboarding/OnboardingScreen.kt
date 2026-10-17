@@ -21,9 +21,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.BatteryChargingFull
+import androidx.compose.material.icons.outlined.BubbleChart
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.WavingHand
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -40,10 +46,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.hilvana.app.R
+import com.hilvana.app.ui.components.HilvanaIcons
 import com.hilvana.app.ui.screens.PermissionsState
 
 private enum class Step { WELCOME, NAME, BUBBLE, REMINDERS, BATTERY, DONE }
@@ -98,7 +108,7 @@ fun OnboardingScreen(
                         Step.WELCOME -> WelcomeStep()
                         Step.NAME -> NameStep(name = name, onNameChange = { name = it.take(30) }, onDone = next)
                         Step.BUBBLE -> PermissionStep(
-                            emoji = "🫧",
+                            icon = Icons.Outlined.BubbleChart,
                             title = "La burbuja flotante",
                             body = "Es el corazón de Hilvana: una burbuja que flota encima de cualquier app " +
                                 "(WhatsApp, YouTube, el navegador…) para anotar algo en 2 segundos sin salir " +
@@ -109,7 +119,7 @@ fun OnboardingScreen(
                             ),
                         )
                         Step.REMINDERS -> PermissionStep(
-                            emoji = "⏰",
+                            icon = HilvanaIcons.Reminder,
                             title = "Recordatorios que sí suenan",
                             body = "Para avisarte a la hora exacta, aunque Hilvana esté cerrada o el " +
                                 "teléfono bloqueado, necesitamos poder mostrar notificaciones y programar " +
@@ -179,29 +189,49 @@ private fun StepDots(count: Int, current: Int) {
 }
 
 @Composable
-private fun BigEmoji(emoji: String) {
-    Text(emoji, style = MaterialTheme.typography.displayMedium)
+private fun BigIcon(icon: ImageVector) {
+    Box(
+        modifier = Modifier
+            .size(72.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primaryContainer),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.size(40.dp),
+        )
+    }
 }
 
 @Composable
 private fun WelcomeStep() {
-    BigEmoji("🧵")
+    BigIcon(ImageVector.vectorResource(R.drawable.ic_stat_hilvana))
     Text("Bienvenido a Hilvana", style = MaterialTheme.typography.headlineMedium)
     Text(
         "Que nada se te olvide: lo anotas en 2 segundos desde cualquier app, y Hilvana lo ordena por ti.",
         style = MaterialTheme.typography.bodyLarge,
     )
-    Feature("🫧", "Burbuja flotante", "Anota sin salir de lo que estás haciendo.")
-    Feature("✨", "Captura inteligente", "Escribe \"mañana a las 5 llamar a mamá\" y se crea el recordatorio.")
-    Feature("📁", "Notas en carpetas", "Ideas, links, capturas… cada cosa en su lugar.")
-    Feature("📅", "Calendario", "Tus recordatorios y tareas, día por día.")
-    Feature("🔒", "Privado", "Todo se guarda en tu teléfono y funciona sin internet.")
+    Feature(Icons.Outlined.BubbleChart, "Burbuja flotante", "Anota sin salir de lo que estás haciendo.")
+    Feature(HilvanaIcons.Smart, "Captura inteligente", "Escribe \"mañana a las 5 llamar a mamá\" y se crea el recordatorio.")
+    Feature(HilvanaIcons.Folder, "Notas en carpetas", "Ideas, links, capturas… cada cosa en su lugar.")
+    Feature(HilvanaIcons.Calendar, "Calendario", "Tus recordatorios y tareas, día por día.")
+    Feature(HilvanaIcons.Lock, "Privado", "Todo se guarda en tu teléfono y funciona sin internet.")
 }
 
 @Composable
-private fun Feature(emoji: String, title: String, body: String) {
+private fun Feature(icon: ImageVector, title: String, body: String) {
     Row(verticalAlignment = Alignment.Top) {
-        Text(emoji, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(end = 12.dp))
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .padding(end = 12.dp)
+                .size(26.dp),
+        )
         Column {
             Text(title, style = MaterialTheme.typography.titleSmall)
             Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -211,7 +241,7 @@ private fun Feature(emoji: String, title: String, body: String) {
 
 @Composable
 private fun NameStep(name: String, onNameChange: (String) -> Unit, onDone: () -> Unit) {
-    BigEmoji("👋")
+    BigIcon(Icons.Outlined.WavingHand)
     Text("¿Cómo te llamas?", style = MaterialTheme.typography.headlineMedium)
     Text(
         "Es solo para saludarte; se queda en tu teléfono. Puedes dejarlo vacío.",
@@ -239,8 +269,8 @@ private fun NameStep(name: String, onNameChange: (String) -> Unit, onDone: () ->
 private data class PermissionItem(val label: String, val granted: Boolean, val onRequest: () -> Unit)
 
 @Composable
-private fun PermissionStep(emoji: String, title: String, body: String, items: List<PermissionItem>) {
-    BigEmoji(emoji)
+private fun PermissionStep(icon: ImageVector, title: String, body: String, items: List<PermissionItem>) {
+    BigIcon(icon)
     Text(title, style = MaterialTheme.typography.headlineMedium)
     Text(body, style = MaterialTheme.typography.bodyLarge)
     items.forEach { item ->
@@ -258,8 +288,18 @@ private fun PermissionStep(emoji: String, title: String, body: String, items: Li
                 modifier = Modifier.padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                if (item.granted) {
+                    Icon(
+                        Icons.Outlined.CheckCircle,
+                        contentDescription = "Activado",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .size(20.dp),
+                    )
+                }
                 Text(
-                    (if (item.granted) "✅ " else "") + item.label,
+                    item.label,
                     style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.weight(1f),
                 )
@@ -273,7 +313,7 @@ private fun PermissionStep(emoji: String, title: String, body: String, items: Li
 
 @Composable
 private fun BatteryStep(onOpenAutostart: () -> Unit, onOpenAppDetails: () -> Unit) {
-    BigEmoji("🔋")
+    BigIcon(Icons.Outlined.BatteryChargingFull)
     Text("Que tu teléfono no la cierre", style = MaterialTheme.typography.headlineMedium)
     Text(
         "Tu teléfono cierra apps en segundo plano para ahorrar batería, y eso puede apagar la " +
@@ -304,7 +344,7 @@ private fun BatteryStep(onOpenAutostart: () -> Unit, onOpenAppDetails: () -> Uni
         }
     }
     Text(
-        "Puedes volver a esto cuando quieras desde ⚙️ Ajustes.",
+        "Puedes volver a esto cuando quieras desde Ajustes.",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Start,
@@ -313,7 +353,7 @@ private fun BatteryStep(onOpenAutostart: () -> Unit, onOpenAppDetails: () -> Uni
 
 @Composable
 private fun DoneStep(name: String, canShowBubble: Boolean) {
-    BigEmoji("🎉")
+    BigIcon(HilvanaIcons.Celebrate)
     Text(
         if (name.isBlank()) "¡Todo listo!" else "¡Todo listo, ${name.trim()}!",
         style = MaterialTheme.typography.headlineMedium,

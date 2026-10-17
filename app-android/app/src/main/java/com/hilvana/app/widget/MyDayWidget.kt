@@ -109,8 +109,8 @@ private fun MyDayContent(items: List<Item>, hideText: Boolean, goal: Int, comple
                 Text(
                     today + when {
                         goal <= 0 -> ""
-                        completedToday >= goal -> " · 🎉 meta $completedToday/$goal"
-                        else -> " · 🎯 $completedToday/$goal"
+                        completedToday >= goal -> " · meta cumplida $completedToday/$goal"
+                        else -> " · meta $completedToday/$goal"
                     },
                     style = TextStyle(fontSize = 12.sp, color = GlanceTheme.colors.onSurfaceVariant),
                 )
@@ -138,7 +138,7 @@ private fun MyDayContent(items: List<Item>, hideText: Boolean, goal: Int, comple
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    "🔒 " + if (items.size == 1) "1 pendiente" else "${items.size} pendientes",
+                    "Bloqueada · " + if (items.size == 1) "1 pendiente" else "${items.size} pendientes",
                     style = TextStyle(fontSize = 15.sp, color = GlanceTheme.colors.onSurfaceVariant),
                 )
             }
@@ -150,7 +150,7 @@ private fun MyDayContent(items: List<Item>, hideText: Boolean, goal: Int, comple
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    "Nada pendiente hoy 🎉",
+                    "Nada pendiente hoy",
                     style = TextStyle(fontSize = 15.sp, color = GlanceTheme.colors.onSurfaceVariant),
                 )
             }
@@ -185,7 +185,7 @@ private fun MyDayRow(item: Item) {
             )
             item.dueAt?.let {
                 Text(
-                    (if (overdue) "⚠️ " else "⏰ ") + formatDue(it),
+                    (if (overdue) "Atrasado · " else "") + formatDue(it),
                     style = TextStyle(
                         fontSize = 11.sp,
                         color = if (overdue) GlanceTheme.colors.error else GlanceTheme.colors.onSurfaceVariant,

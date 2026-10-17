@@ -4,7 +4,10 @@ import android.content.Context
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
+import androidx.glance.ColorFilter
 import androidx.glance.GlanceModifier
+import androidx.glance.Image
+import androidx.glance.ImageProvider
 import androidx.glance.GlanceTheme
 import androidx.glance.LocalContext
 import androidx.glance.action.clickable
@@ -17,12 +20,14 @@ import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
+import androidx.glance.layout.size
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.padding
 import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
+import com.hilvana.app.R
 import com.hilvana.app.capture.CaptureActivity
 import com.hilvana.app.data.UserPrefs
 
@@ -52,7 +57,12 @@ private fun QuickCaptureContent() {
             .clickable(actionStartActivity(CaptureActivity.intent(context))),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("🫧", style = TextStyle(fontSize = 20.sp))
+        Image(
+            provider = ImageProvider(R.drawable.ic_stat_hilvana),
+            contentDescription = null,
+            colorFilter = ColorFilter.tint(GlanceTheme.colors.primary),
+            modifier = GlanceModifier.size(22.dp),
+        )
         Spacer(GlanceModifier.width(10.dp))
         Text(
             "¿Qué no quieres olvidar?",

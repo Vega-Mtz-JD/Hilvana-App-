@@ -12,8 +12,8 @@ import kotlinx.coroutines.launch
 
 /**
  * Botones de la notificación de foco y del empujoncito:
- *  - "✓ <siguiente paso>": marca ese paso; si era el último, la tarea queda hecha.
- *  - "✓ Hecho": completa la tarea.
+ *  - "Paso: <siguiente paso>": marca ese paso; si era el último, la tarea queda hecha.
+ *  - "Hecho": completa la tarea.
  *  - (alarma) empujoncito: muestra el aviso y programa el siguiente.
  */
 class FocusActionReceiver : BroadcastReceiver() {

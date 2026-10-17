@@ -9,6 +9,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Contrast
+import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,6 +26,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.FilterChip
 import android.os.Build
+import com.hilvana.app.ui.components.HilvanaIcons
+import com.hilvana.app.ui.components.IconText
 import com.hilvana.app.ui.theme.ThemeMode
 import java.text.DateFormat
 import java.time.LocalDate
@@ -115,7 +120,7 @@ fun SettingsScreen(
             Text("Apariencia", style = MaterialTheme.typography.titleMedium)
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("🌗 Tema", style = MaterialTheme.typography.titleSmall)
+                    IconText(Icons.Outlined.Contrast, "Tema")
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         ThemeMode.entries.forEach { mode ->
                             FilterChip(
@@ -128,7 +133,7 @@ fun SettingsScreen(
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
-                                Text("🎨 Colores del fondo de pantalla", style = MaterialTheme.typography.titleSmall)
+                                IconText(Icons.Outlined.Palette, "Colores del fondo de pantalla")
                                 Text(
                                     if (dynamicColor) "La app toma los colores de tu fondo de pantalla."
                                     else "Usando los colores de Hilvana (verde azulado y ámbar).",
@@ -147,7 +152,7 @@ fun SettingsScreen(
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text("🔒 Bloquear Hilvana al abrir", style = MaterialTheme.typography.titleSmall)
+                            IconText(HilvanaIcons.Lock, "Bloquear Hilvana al abrir")
                             Text(
                                 "Con tu huella o el PIN de tu teléfono. Se vuelve a bloquear tras 1 minuto " +
                                     "fuera de la app. Capturar desde la burbuja no lo pide.",
@@ -163,10 +168,10 @@ fun SettingsScreen(
                     }
                     Text(
                         if (canUseAppLock) {
-                            "También puedes proteger solo una carpeta (p. ej. 🔑 Claves): ábrela, toca ✏️ y " +
+                            "También puedes proteger solo una carpeta (p. ej. Claves): ábrela, toca el lápiz y " +
                                 "activa \"Proteger con huella o PIN\"."
                         } else {
-                            "⚠️ Tu teléfono no tiene bloqueo de pantalla. Configúralo en Ajustes del teléfono " +
+                            "Tu teléfono no tiene bloqueo de pantalla. Configúralo en Ajustes del teléfono " +
                                 "para usar esta opción."
                         },
                         style = MaterialTheme.typography.bodySmall,
@@ -177,7 +182,7 @@ fun SettingsScreen(
             Card(modifier = Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("🔗 Vista previa de enlaces", style = MaterialTheme.typography.titleSmall)
+                        IconText(HilvanaIcons.Link, "Vista previa de enlaces")
                         Text(
                             "Trae el título y la miniatura de los links que guardas (YouTube, TikTok, " +
                                 "páginas…). Para eso Hilvana visita esa página; tus notas no se envían.",
@@ -215,18 +220,18 @@ fun SettingsScreen(
                                 exportGate { createBackup.launch("hilvana-respaldo-${LocalDate.now()}.zip") }
                             },
                             enabled = !backupBusy,
-                        ) { Text("📤 Exportar") }
+                        ) { Text("Exportar") }
                         OutlinedButton(
                             onClick = { openBackup.launch(arrayOf("application/zip", "application/octet-stream")) },
                             enabled = !backupBusy,
-                        ) { Text("📥 Importar") }
+                        ) { Text("Importar") }
                     }
                     if (backupBusy) {
                         LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                     }
                     Text(
                         "Importar suma lo del respaldo a lo que ya tienes; no borra nada ni duplica.\n" +
-                            "⚠️ El archivo no está cifrado e incluye tus carpetas protegidas: guárdalo en un " +
+                            "Ojo: el archivo no está cifrado e incluye tus carpetas protegidas: guárdalo en un " +
                             "lugar seguro.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -248,7 +253,7 @@ fun SettingsScreen(
                         OutlinedButton(onClick = onAddCaptureTile) { Text("Agregar mosaico a Ajustes rápidos") }
                     } else {
                         Text(
-                            "Para el mosaico: baja la barra, toca el lápiz ✏️ y arrastra \"Capturar\".",
+                            "Para el mosaico: baja la barra, toca el lápiz y arrastra \"Capturar\".",
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
@@ -257,11 +262,12 @@ fun SettingsScreen(
 
             Text("Permisos", style = MaterialTheme.typography.titleMedium)
             if (permissions.allGranted) {
-                Text("✅ Todos los permisos listos", style = MaterialTheme.typography.bodyMedium)
+                IconText(Icons.Outlined.CheckCircle, "Todos los permisos listos", style = MaterialTheme.typography.bodyMedium, iconTint = MaterialTheme.colorScheme.primary)
             }
             if (!permissions.overlay) {
                 SettingsCard(
-                    title = "⚠️ Mostrar sobre otras apps",
+                    title = "Mostrar sobre otras apps",
+                    warning = true,
                     explanation = "Necesario para que la burbuja aparezca encima de WhatsApp, YouTube, etc.",
                     buttonText = "Dar permiso",
                     onClick = onRequestOverlay,
@@ -269,7 +275,8 @@ fun SettingsScreen(
             }
             if (!permissions.notifications) {
                 SettingsCard(
-                    title = "⚠️ Notificaciones",
+                    title = "Notificaciones",
+                    warning = true,
                     explanation = "Para mostrar el aviso de la burbuja y tus recordatorios.",
                     buttonText = "Permitir",
                     onClick = onRequestNotifications,
@@ -277,7 +284,8 @@ fun SettingsScreen(
             }
             if (!permissions.exactAlarms) {
                 SettingsCard(
-                    title = "⚠️ Alarmas y recordatorios",
+                    title = "Alarmas y recordatorios",
+                    warning = true,
                     explanation = "Para que tus recordatorios suenen a la hora exacta y no minutos después.",
                     buttonText = "Permitir",
                     onClick = onRequestExactAlarms,
@@ -307,10 +315,16 @@ private fun SettingsCard(
     explanation: String,
     buttonText: String,
     onClick: () -> Unit,
+    /** Permiso que falta: se marca con un ícono de aviso. */
+    warning: Boolean = false,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(title, style = MaterialTheme.typography.titleSmall)
+            if (warning) {
+                IconText(HilvanaIcons.Warning, title, iconTint = MaterialTheme.colorScheme.error)
+            } else {
+                Text(title, style = MaterialTheme.typography.titleSmall)
+            }
             Text(explanation, style = MaterialTheme.typography.bodyMedium)
             OutlinedButton(onClick = onClick) { Text(buttonText) }
         }

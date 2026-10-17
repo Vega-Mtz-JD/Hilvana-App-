@@ -4,6 +4,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.StarBorder
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,13 +43,14 @@ fun StarRating(
         horizontalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         (1..MAX_PRIORITY).forEach { star ->
-            Text(
-                text = if (star <= priority) "★" else "☆",
-                style = MaterialTheme.typography.headlineSmall,
-                color = if (star <= priority) StarColor else MaterialTheme.colorScheme.outline,
+            Icon(
+                if (star <= priority) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+                contentDescription = null,
+                tint = if (star <= priority) StarColor else MaterialTheme.colorScheme.outline,
                 modifier = Modifier
                     .clickable { onChange(if (star == priority) 0 else star) }
-                    .padding(horizontal = 2.dp)
+                    .padding(2.dp)
+                    .size(30.dp)
                     .semantics { contentDescription = "$star estrellas" },
             )
         }

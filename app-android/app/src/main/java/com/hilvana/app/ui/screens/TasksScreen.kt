@@ -45,10 +45,10 @@ fun TasksScreen(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (pending.isEmpty()) {
-            item { EmptyState("Sin tareas pendientes 🎉") }
+            item { EmptyState("Sin tareas pendientes") }
         }
         if (focus.isNotEmpty()) {
-            item(key = "focus-header") { SectionHeader("🎯 En prioridad · también en tus notificaciones") }
+            item(key = "focus-header") { SectionHeader("En prioridad · también en tus notificaciones") }
             items(focus, key = { it.id }) { item ->
                 ItemCard(item = item, onClick = { onOpen(item) }, onToggleDone = { onToggleDone(item) })
             }

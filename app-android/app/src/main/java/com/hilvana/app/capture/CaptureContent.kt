@@ -57,6 +57,9 @@ import com.hilvana.app.parser.SpanishDateParser
 import com.hilvana.app.reminder.QuickTime
 import androidx.compose.foundation.BorderStroke
 import com.hilvana.app.ui.components.AudioPlayer
+import com.hilvana.app.ui.components.ChipIcon
+import com.hilvana.app.ui.components.HilvanaIcons
+import com.hilvana.app.ui.components.iconVector
 import com.hilvana.app.ui.components.ItemImage
 import com.hilvana.app.data.RepeatRule
 import com.hilvana.app.ui.components.RepeatSelector
@@ -246,16 +249,23 @@ fun CaptureContent(
                 ) {
                     AssistChip(
                         onClick = ::paste,
-                        label = { Text("📋 Pegar" + (clipKind?.let { " ${it.label}" } ?: "")) },
+                        label = { Text("Pegar" + (clipKind?.let { " ${it.label}" } ?: "")) },
+                        leadingIcon = { ChipIcon(HilvanaIcons.Paste) },
                     )
                     AssistChip(
                         onClick = { onPickImage(text) },
-                        label = { Text(if (imagePath == null) "🖼️ Imagen" else "🖼️ Cambiar imagen") },
+                        label = { Text(if (imagePath == null) "Imagen" else "Cambiar imagen") },
+                        leadingIcon = { ChipIcon(HilvanaIcons.Image) },
                     )
-                    AssistChip(onClick = { onDictate(text) }, label = { Text("🎤 Dictar") })
+                    AssistChip(
+                        onClick = { onDictate(text) },
+                        label = { Text("Dictar") },
+                        leadingIcon = { ChipIcon(HilvanaIcons.Dictate) },
+                    )
                     AssistChip(
                         onClick = { onRecordAudio(text) },
-                        label = { Text(if (audioPath == null) "🎙️ Audio" else "🎙️ Grabar otro") },
+                        label = { Text(if (audioPath == null) "Audio" else "Grabar otro") },
+                        leadingIcon = { ChipIcon(HilvanaIcons.VoiceNote) },
                     )
                 }
 
@@ -263,7 +273,7 @@ fun CaptureContent(
                     AudioPlayer(
                         path = audioPath,
                         durationMs = audioDurationMs,
-                        trailing = { TextButton(onClick = onAudioRemove) { Text("Quitar ✕") } },
+                        trailing = { TextButton(onClick = onAudioRemove) { Text("Quitar") } },
                     )
                 }
 
@@ -279,7 +289,7 @@ fun CaptureContent(
                         TextButton(
                             onClick = { onImageChange(null) },
                             modifier = Modifier.align(Alignment.TopEnd),
-                        ) { Text("Quitar ✕") }
+                        ) { Text("Quitar") }
                     }
                 }
 
@@ -291,14 +301,14 @@ fun CaptureContent(
                         label = {
                             Text(
                                 text = buildString {
-                                    append("✨ ")
+
                                     if (detectedPriority != null) append(starsText(detectedPriority)).append(" ")
                                     if (detectedDue != null) {
-                                        append("⏰ ").append(formatDue(detectedDue))
-                                        detected.repeat?.let { append(" 🔁 ").append(it.label) }
+                                        append(formatDue(detectedDue))
+                                        detected.repeat?.let { append(" · ").append(it.label) }
                                         if (detected.text.isNotBlank()) append(" · ").append(detected.text)
                                     } else if (prefixFolder != null) {
-                                        append(prefixFolder.label)
+                                        append(prefixFolder.name)
                                         if (detected.textAfterPrefix.isNotBlank()) {
                                             append(" · ").append(detected.textAfterPrefix)
                                         }
@@ -310,6 +320,7 @@ fun CaptureContent(
                                 overflow = TextOverflow.Ellipsis,
                             )
                         },
+                        leadingIcon = { ChipIcon(HilvanaIcons.Smart) },
                         trailingIcon = {
                             Icon(Icons.Filled.Close, contentDescription = "Descartar lo detectado")
                         },
@@ -339,7 +350,8 @@ fun CaptureContent(
                             FilterChip(
                                 selected = effectiveFolder?.id == folder.id,
                                 onClick = { selectedFolderId = folder.id },
-                                label = { Text(folder.label) },
+                                label = { Text(folder.name) },
+                                leadingIcon = { ChipIcon(folder.iconVector) },
                             )
                         }
                     }
@@ -353,7 +365,7 @@ fun CaptureContent(
                 if (shownType == ItemType.TASK) {
                     Text(
                         "Aparecerá en Tareas para hacerla cuando puedas. Si necesitas que suene a una " +
-                            "hora, elige ⏰ Recordatorio.",
+                            "hora, elige Recordatorio.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -396,7 +408,7 @@ fun CaptureContent(
                                 usesPrefix -> parsed.textAfterPrefix
                                 usesDetection || usesPriorityWords -> parsed.text
                                 else -> text.trim()
-                            }.ifBlank { text.trim() }.ifBlank { if (imagePath != null) "📷 Imagen" else "🎙️ Nota de voz" }
+                            }.ifBlank { text.trim() }.ifBlank { if (imagePath != null) "Imagen" else "Nota de voz" }
                             onSave(finalText, shownType, reminderDue, effectiveFolder?.id, priority, repeat)
                         },
                         // Con imagen se puede guardar sin texto; un recordatorio necesita hora.

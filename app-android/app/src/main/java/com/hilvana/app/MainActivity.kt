@@ -230,7 +230,7 @@ class MainActivity : FragmentActivity() {
                     "El mosaico \"Capturar\" está en tus Ajustes rápidos"
                 StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_NOT_ADDED -> null
                 // Algunos fabricantes no lo permiten desde la app.
-                else -> "Agrégalo a mano: baja la barra, toca el lápiz ✏️ y arrastra \"Capturar\""
+                else -> "Agrégalo a mano: baja la barra, toca el lápiz y arrastra \"Capturar\""
             }
             message?.let { Toast.makeText(this, it, Toast.LENGTH_LONG).show() }
         }
