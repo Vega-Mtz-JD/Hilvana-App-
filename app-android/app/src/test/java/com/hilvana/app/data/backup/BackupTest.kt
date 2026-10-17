@@ -13,7 +13,7 @@ import org.junit.Test
 class BackupTest {
 
     private val folders = listOf(
-        Folder(id = 1, name = "Ideas", emoji = "💡", createdAt = 100),
+        Folder(id = 1, name = "Ideas", emoji = "💡", createdAt = 100, category = "Personal"),
         Folder(id = 2, name = "Claves", emoji = "🔑", createdAt = 200, locked = true),
     )
     private val items = listOf(

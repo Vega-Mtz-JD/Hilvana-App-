@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
@@ -40,6 +41,9 @@ private val SUGGESTIONS = listOf(
     "📚" to "Aprender",
 )
 
+/** Categorías de ejemplo; el usuario puede escribir la que quiera. */
+private val CATEGORY_SUGGESTIONS = listOf("Personal", "Trabajo", "Tecnología", "Estudios", "Hogar")
+
 private val EMOJIS = listOf(
     "📁", "💡", "🔑", "🔗", "🎬", "🧠", "📷", "🛒", "📚", "⭐", "❤️", "💼", "🏠", "✈️", "🎵", "🍳",
 )
@@ -49,6 +53,8 @@ private val EMOJIS = listOf(
 fun FolderDialog(
     folder: Folder,
     existingNames: List<String>,
+    /** Categorías que ya usan otras carpetas (para elegir con un toque). */
+    existingCategories: List<String>,
     /** false si el teléfono no tiene bloqueo de pantalla (no se podría desbloquear). */
     canLock: Boolean,
     onDismiss: () -> Unit,
@@ -59,6 +65,7 @@ fun FolderDialog(
     var name by rememberSaveable { mutableStateOf(folder.name) }
     var emoji by rememberSaveable { mutableStateOf(folder.emoji) }
     var locked by rememberSaveable { mutableStateOf(folder.locked) }
+    var category by rememberSaveable { mutableStateOf(folder.category.orEmpty()) }
     var confirmDelete by remember { mutableStateOf(false) }
 
     val trimmed = name.trim()
@@ -69,7 +76,10 @@ fun FolderDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (isNew) "Nueva carpeta" else "Editar carpeta") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 if (isNew) {
                     Text("Sugerencias", style = MaterialTheme.typography.labelLarge)
                     Row(
@@ -106,6 +116,33 @@ fun FolderDialog(
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                     modifier = Modifier.fillMaxWidth(),
                 )
+
+                Text("Categoría (opcional)", style = MaterialTheme.typography.labelLarge)
+                OutlinedTextField(
+                    value = category,
+                    onValueChange = { category = it.take(24) },
+                    placeholder = { Text("Ej.: Trabajo, Tecnología…") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                // Tus categorías primero; las sugerencias solo si aún no tienes una igual.
+                val categoryOptions = existingCategories + CATEGORY_SUGGESTIONS.filter { suggested ->
+                    existingCategories.none { Folder(name = it).matches(suggested) }
+                }
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    categoryOptions.forEach { option ->
+                        val selected = Folder(name = option).matches(category)
+                        FilterChip(
+                            selected = selected,
+                            onClick = { category = if (selected) "" else option },
+                            label = { Text(option) },
+                        )
+                    }
+                }
 
                 Text("Ícono", style = MaterialTheme.typography.labelLarge)
                 Row(
@@ -170,7 +207,13 @@ fun FolderDialog(
         },
         confirmButton = {
             TextButton(
-                onClick = { onSave(folder.copy(name = trimmed, emoji = emoji, locked = locked)) },
+                onClick = {
+                    // Si escribió una categoría que ya existe con otras mayúsculas/acentos, usa la existente.
+                    val typed = category.trim()
+                    val finalCategory = existingCategories.firstOrNull { Folder(name = it).matches(typed) }
+                        ?: typed.ifEmpty { null }
+                    onSave(folder.copy(name = trimmed, emoji = emoji, locked = locked, category = finalCategory))
+                },
                 enabled = canSave,
             ) { Text(if (isNew) "Crear" else "Guardar") }
         },

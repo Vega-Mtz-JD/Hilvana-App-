@@ -44,6 +44,10 @@ class ItemsViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { repository.saveFolder(folder) }
     }
 
+    fun renameCategory(oldName: String, newName: String?) {
+        viewModelScope.launch { repository.renameCategory(oldName, newName) }
+    }
+
     fun deleteFolder(folder: Folder) {
         viewModelScope.launch { repository.deleteFolder(folder) }
     }

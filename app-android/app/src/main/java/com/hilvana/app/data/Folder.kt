@@ -20,6 +20,8 @@ data class Folder(
     val createdAt: Long = System.currentTimeMillis(),
     /** Protegida: sus notas se ocultan hasta desbloquear con huella o PIN. */
     @ColumnInfo(defaultValue = "0") val locked: Boolean = false,
+    /** Categoría que agrupa carpetas ("Trabajo", "Tecnología"…); null = sin categoría. */
+    val category: String? = null,
 ) {
     val label: String get() = "$emoji $name" + if (locked) " 🔒" else ""
 
@@ -48,6 +50,9 @@ interface FolderDao {
 
     @Update
     suspend fun update(folder: Folder)
+
+    @Query("UPDATE folders SET category = :newName WHERE category = :oldName")
+    suspend fun renameCategory(oldName: String, newName: String?)
 
     @Delete
     suspend fun delete(folder: Folder)

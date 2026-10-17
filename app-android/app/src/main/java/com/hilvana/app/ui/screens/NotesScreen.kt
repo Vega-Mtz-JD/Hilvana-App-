@@ -1,5 +1,6 @@
 package com.hilvana.app.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,16 +11,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -53,6 +62,8 @@ fun NotesScreen(
     onOpen: (Item) -> Unit,
     onSaveFolder: (Folder) -> Unit,
     onDeleteFolder: (Folder) -> Unit,
+    /** Renombrar una categoría en todas sus carpetas (null = quitarla). */
+    onRenameCategory: (String, String?) -> Unit,
     /** false: las carpetas protegidas muestran 🔒 en lugar de cuántas notas tienen. */
     unlocked: Boolean,
     canLockFolders: Boolean,
@@ -63,6 +74,9 @@ fun NotesScreen(
     val openFolder = openFolderId?.let { foldersById[it] }
     // Diálogo de carpeta: null = cerrado; Folder con id 0 = carpeta nueva.
     var editingFolder by remember { mutableStateOf<Folder?>(null) }
+    val categories = folders.mapNotNull { it.category }.distinct().sortedBy { it.lowercase() }
+    var collapsedCategories by rememberSaveable { mutableStateOf(setOf<String>()) }
+    var renamingCategory by remember { mutableStateOf<String?>(null) }
 
     // Si la carpeta abierta se borró, volver a la vista de carpetas.
     LaunchedEffect(openFolderId, folders) {
@@ -75,30 +89,58 @@ fun NotesScreen(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (openFolder == null) {
-            item { SectionHeader("Carpetas") }
-            val tiles: List<Folder?> = folders + null // null = "Nueva carpeta"
-            tiles.chunked(FOLDER_COLUMNS).forEach { row ->
-                item(key = "folders-${row.firstOrNull()?.id ?: "new"}") {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        row.forEach { folder ->
-                            if (folder != null) {
-                                FolderTile(
-                                    folder = folder,
-                                    count = notes.count { it.folderId == folder.id },
-                                    hidden = folder.locked && !unlocked,
-                                    onClick = { onOpenFolder(folder.id) },
-                                    modifier = Modifier.weight(1f),
-                                )
-                            } else {
-                                NewFolderTile(
-                                    onClick = { editingFolder = Folder(name = "") },
-                                    modifier = Modifier.weight(1f),
-                                )
+            val folderRows: (String, List<Folder?>) -> Unit = { keyPrefix, tiles ->
+                tiles.chunked(FOLDER_COLUMNS).forEach { row ->
+                    item(key = "$keyPrefix-${row.firstOrNull()?.id ?: "new"}") {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            row.forEach { folder ->
+                                if (folder != null) {
+                                    FolderTile(
+                                        folder = folder,
+                                        count = notes.count { it.folderId == folder.id },
+                                        hidden = folder.locked && !unlocked,
+                                        onClick = { onOpenFolder(folder.id) },
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                } else {
+                                    NewFolderTile(
+                                        onClick = { editingFolder = Folder(name = "") },
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                }
                             }
+                            repeat(FOLDER_COLUMNS - row.size) { Spacer(Modifier.weight(1f)) }
                         }
-                        repeat(FOLDER_COLUMNS - row.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
+            }
+
+            if (categories.isEmpty()) {
+                item { SectionHeader("Carpetas") }
+                folderRows("folders", folders + null) // null = "Nueva carpeta"
+            } else {
+                categories.forEach { category ->
+                    val inCategory = folders.filter { it.category == category }
+                    val collapsed = category in collapsedCategories
+                    item(key = "category-$category") {
+                        CategoryHeader(
+                            name = category,
+                            folderCount = inCategory.size,
+                            collapsed = collapsed,
+                            onToggle = {
+                                collapsedCategories =
+                                    if (collapsed) collapsedCategories - category else collapsedCategories + category
+                            },
+                            onRename = { renamingCategory = category },
+                        )
+                    }
+                    if (!collapsed) folderRows("cat-$category", inCategory)
+                }
+                val uncategorized = folders.filter { it.category == null }
+                item(key = "category-none") {
+                    SectionHeader(if (uncategorized.isEmpty()) "Nueva carpeta" else "Sin categoría")
+                }
+                folderRows("uncategorized", uncategorized + null)
             }
 
             item { SectionHeader("Todas las notas (${notes.size})") }
@@ -144,6 +186,7 @@ fun NotesScreen(
         FolderDialog(
             folder = folder,
             existingNames = folders.filter { it.id != folder.id }.map { it.name },
+            existingCategories = categories,
             canLock = canLockFolders,
             onDismiss = { editingFolder = null },
             onSave = {
@@ -157,6 +200,92 @@ fun NotesScreen(
             },
         )
     }
+
+    renamingCategory?.let { category ->
+        RenameCategoryDialog(
+            name = category,
+            onDismiss = { renamingCategory = null },
+            onRename = { newName ->
+                onRenameCategory(category, newName)
+                collapsedCategories = collapsedCategories - category
+                renamingCategory = null
+            },
+        )
+    }
+}
+
+/** Encabezado de una categoría: tocarlo la pliega/despliega; el lápiz la renombra. */
+@Composable
+private fun CategoryHeader(
+    name: String,
+    folderCount: Int,
+    collapsed: Boolean,
+    onToggle: () -> Unit,
+    onRename: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onToggle),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            if (collapsed) Icons.AutoMirrored.Filled.KeyboardArrowRight else Icons.Filled.KeyboardArrowDown,
+            contentDescription = if (collapsed) "Mostrar carpetas" else "Ocultar carpetas",
+            tint = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            name,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 4.dp),
+        )
+        Text(
+            if (folderCount == 1) "1 carpeta" else "$folderCount carpetas",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        IconButton(onClick = onRename) {
+            Icon(
+                Icons.Filled.Edit,
+                contentDescription = "Renombrar categoría",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/** Renombrar una categoría (cambia en todas sus carpetas) o quitarla. */
+@Composable
+private fun RenameCategoryDialog(name: String, onDismiss: () -> Unit, onRename: (String?) -> Unit) {
+    var text by rememberSaveable { mutableStateOf(name) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Categoría") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it.take(24) },
+                    label = { Text("Nombre") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                TextButton(onClick = { onRename(null) }) {
+                    Text("Quitar categoría (las carpetas se quedan)")
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onRename(text) }, enabled = text.isNotBlank()) { Text("Guardar") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+    )
 }
 
 @Composable

@@ -38,6 +38,7 @@ object BackupJson {
                     .put("emoji", folder.emoji)
                     .put("createdAt", folder.createdAt)
                     .put("locked", folder.locked)
+                    .put("category", folder.category ?: JSONObject.NULL)
             }))
             .put("items", JSONArray(items.map { item ->
                 JSONObject()
@@ -80,6 +81,7 @@ object BackupJson {
                 emoji = f.optString("emoji", Folder.DEFAULT_EMOJI),
                 createdAt = f.optLong("createdAt", System.currentTimeMillis()),
                 locked = f.optBoolean("locked", false),
+                category = if (f.isNull("category")) null else f.optString("category").ifBlank { null },
             )
         }
         val items = json.optJSONArray("items").objects().map { i ->

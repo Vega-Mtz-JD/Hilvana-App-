@@ -345,6 +345,7 @@ fun HilvanaRoot(
                 onOpen = open,
                 onSaveFolder = viewModel::saveFolder,
                 onDeleteFolder = viewModel::deleteFolder,
+                onRenameCategory = viewModel::renameCategory,
                 modifier = contentModifier,
             )
             Tab.TASKS -> TasksScreen(

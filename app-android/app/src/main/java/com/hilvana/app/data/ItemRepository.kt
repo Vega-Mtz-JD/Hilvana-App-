@@ -30,6 +30,10 @@ class ItemRepository(
     suspend fun saveFolder(folder: Folder): Long =
         if (folder.id == 0L) folderDao.insert(folder) else folder.id.also { folderDao.update(folder) }
 
+    /** Renombra una categoría en todas sus carpetas (null o vacío = quitarla). */
+    suspend fun renameCategory(oldName: String, newName: String?) =
+        folderDao.renameCategory(oldName, newName?.trim()?.ifEmpty { null })
+
     suspend fun deleteFolder(folder: Folder) {
         dao.clearFolder(folder.id)
         folderDao.delete(folder)
