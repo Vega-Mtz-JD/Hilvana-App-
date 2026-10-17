@@ -41,7 +41,7 @@ data class Item(
     val repeatRule: RepeatRule? = null,
     /** Pasos de una tarea (checklist). */
     @ColumnInfo(defaultValue = "'[]'") val checklist: List<CheckItem> = emptyList(),
-    /** 🎯 En foco: se muestra fija en notificaciones, burbuja y widget sin abrir la app. */
+    /** 🎯 En prioridad: se muestra fija en notificaciones, burbuja y widget sin abrir la app. */
     @ColumnInfo(defaultValue = "0") val pinned: Boolean = false,
     /** Vista previa del primer enlace del texto: para qué enlace es, título, sitio y miniatura. */
     val linkUrl: String? = null,
@@ -53,7 +53,7 @@ data class Item(
     val audioDurationMs: Long? = null,
 )
 
-/** Máximo de tareas en foco a la vez (para que siga siendo "foco"). */
+/** Máximo de tareas en prioridad a la vez (para que siga siendo "foco"). */
 const val MAX_PINNED = 3
 
 const val MAX_PRIORITY = 5

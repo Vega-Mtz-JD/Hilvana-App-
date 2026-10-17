@@ -80,7 +80,7 @@ import java.util.TimeZone
 fun ItemEditorSheet(
     item: Item,
     folders: List<Folder>,
-    /** Cuántas OTRAS tareas están en foco (para el máximo). */
+    /** Cuántas OTRAS tareas están en prioridad (para el máximo). */
     otherPinnedCount: Int,
     nudgeHours: Int,
     onNudgeHoursChange: (Int) -> Unit,

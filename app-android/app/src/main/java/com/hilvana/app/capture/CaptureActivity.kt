@@ -127,6 +127,7 @@ class CaptureActivity : ComponentActivity() {
                         folders = folders,
                         focusTasks = focusTasks,
                         hideFocusText = UserPrefs(this@CaptureActivity).appLockEnabled,
+                        recentFolderIds = UserPrefs(this@CaptureActivity).recentFolderIds,
                         onFocusStep = { lifecycleScope.launch { FocusActions.completeNextStep(this@CaptureActivity, it) } },
                         onFocusDone = { lifecycleScope.launch { FocusActions.complete(this@CaptureActivity, it) } },
                         initialText = initialText,

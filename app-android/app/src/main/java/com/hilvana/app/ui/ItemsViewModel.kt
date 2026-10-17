@@ -222,7 +222,7 @@ class ItemsViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { refreshWidgets(getApplication()) }
     }
 
-    // ---------- Tareas en foco ----------
+    // ---------- Tareas en prioridad ----------
 
     private val _nudgeHours = MutableStateFlow(prefs.focusNudgeHours)
     val nudgeHours: StateFlow<Int> = _nudgeHours.asStateFlow()

@@ -27,6 +27,16 @@ class UserPrefs(context: Context) {
         get() = prefs.getLong(KEY_LAST_BACKUP, 0L)
         set(value) = prefs.edit { putLong(KEY_LAST_BACKUP, value) }
 
+    /** Carpetas usadas hace poco, la última primero (para elegirla sola al capturar). */
+    val recentFolderIds: List<Long>
+        get() = prefs.getString(KEY_RECENT_FOLDERS, "").orEmpty()
+            .split(',').mapNotNull { it.toLongOrNull() }
+
+    fun rememberFolderUse(folderId: Long) {
+        val updated = (listOf(folderId) + recentFolderIds.filter { it != folderId }).take(5)
+        prefs.edit { putString(KEY_RECENT_FOLDERS, updated.joinToString(",")) }
+    }
+
     /** Cuenta de Google conectada para el respaldo en Drive (vacío = no conectada). */
     var googleEmail: String
         get() = prefs.getString(KEY_GOOGLE_EMAIL, "").orEmpty()
@@ -66,7 +76,7 @@ class UserPrefs(context: Context) {
         get() = prefs.getInt(KEY_DAILY_GOAL, 3)
         set(value) = prefs.edit { putInt(KEY_DAILY_GOAL, value) }
 
-    /** Empujoncitos de las tareas en foco: cada cuántas horas (0 = apagados). */
+    /** Empujoncitos de las tareas en prioridad: cada cuántas horas (0 = apagados). */
     var focusNudgeHours: Int
         get() = prefs.getInt(KEY_NUDGE_HOURS, 0)
         set(value) = prefs.edit { putInt(KEY_NUDGE_HOURS, value) }
@@ -77,6 +87,7 @@ class UserPrefs(context: Context) {
         set(value) = prefs.edit { putLong(KEY_NEXT_NUDGE, value) }
 
     private companion object {
+        const val KEY_RECENT_FOLDERS = "recent_folders"
         const val KEY_GOOGLE_EMAIL = "google_email"
         const val KEY_GOOGLE_NAME = "google_name"
         const val KEY_CLOUD_AUTO = "cloud_auto_backup"

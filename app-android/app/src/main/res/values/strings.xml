@@ -6,7 +6,7 @@
     <string name="widget_quick_capture_name">Captura rápida</string>
     <string name="widget_quick_capture_description">Anota algo en 2 segundos desde la pantalla de inicio</string>
     <string name="widget_my_day_name">Mi día</string>
-    <string name="widget_focus_name">🎯 En foco</string>
-    <string name="widget_focus_description">Tu tarea en foco con sus pasos: márcalos desde la pantalla de inicio</string>
+    <string name="widget_focus_name">🎯 En prioridad</string>
+    <string name="widget_focus_description">Tu tarea en prioridad con sus pasos: márcalos desde la pantalla de inicio</string>
     <string name="widget_my_day_description">Lo de hoy y lo atrasado; márcalo como hecho sin abrir la app</string>
 </resources>

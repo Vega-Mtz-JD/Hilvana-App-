@@ -38,6 +38,11 @@ class ItemRepository(
     /** Inserta (id = 0) o actualiza el elemento. Devuelve su id. */
     suspend fun save(original: Item): Long {
         val previous = if (original.id == 0L) null else dao.getById(original.id)
+        // Carpeta recién usada (nota nueva o movida): el panel de captura la propone la próxima vez.
+        val folderId = original.folderId
+        if (original.type == ItemType.NOTE && folderId != null && folderId != previous?.folderId) {
+            UserPrefs(context).rememberFolderUse(folderId)
+        }
         // Fecha de completado: se anota al marcar como hecho y se borra al desmarcar.
         var item = when {
             !original.done -> original.copy(completedAt = null)

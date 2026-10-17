@@ -18,7 +18,7 @@ import com.hilvana.app.data.MAX_PINNED
 private val NUDGE_OPTIONS = listOf(0 to "No", 1 to "Cada 1 h", 2 to "Cada 2 h", 4 to "Cada 4 h")
 
 /**
- * 🎯 En foco: la tarea se muestra fija en notificaciones (y pantalla de bloqueo),
+ * 🎯 En prioridad: la tarea se muestra fija en notificaciones (y pantalla de bloqueo),
  * en la burbuja y en el widget, para avanzar sin abrir la app.
  */
 @Composable
@@ -33,12 +33,12 @@ fun FocusSection(
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("🎯 En foco", style = MaterialTheme.typography.labelLarge)
+                Text("🎯 En prioridad", style = MaterialTheme.typography.labelLarge)
                 Text(
                     when {
                         pinned || canPin ->
                             "Fija en tus notificaciones, la burbuja y el widget: la ves y avanzas sin abrir la app."
-                        else -> "Ya tienes $MAX_PINNED tareas en foco. Termina o quita una para fijar esta."
+                        else -> "Ya tienes $MAX_PINNED tareas en prioridad. Termina o quita una para fijar esta."
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -47,7 +47,7 @@ fun FocusSection(
             Switch(checked = pinned, onCheckedChange = onPinnedChange, enabled = pinned || canPin)
         }
         if (pinned) {
-            Text("🔔 Empujoncitos (para todas tus tareas en foco, nunca de 22:00 a 8:00)", style = MaterialTheme.typography.bodySmall)
+            Text("🔔 Empujoncitos (para todas tus tareas en prioridad, nunca de 22:00 a 8:00)", style = MaterialTheme.typography.bodySmall)
             Row(
                 modifier = Modifier.horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),

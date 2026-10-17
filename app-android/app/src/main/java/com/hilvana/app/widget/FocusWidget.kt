@@ -45,8 +45,8 @@ import com.hilvana.app.focus.FocusActions
 import com.hilvana.app.repository
 
 /**
- * Widget "🎯 En foco": la primera tarea en foco con su checklist (se marca cada paso
- * desde la pantalla de inicio) y debajo las demás tareas en foco.
+ * Widget "🎯 En prioridad": la primera tarea en prioridad con su checklist (se marca cada paso
+ * desde la pantalla de inicio) y debajo las demás tareas en prioridad.
  */
 class FocusWidget : GlanceAppWidget() {
 
@@ -79,8 +79,8 @@ private fun FocusContent(tasks: List<Item>, hideText: Boolean) {
         val first = tasks.firstOrNull()
         Text(
             when {
-                first == null -> "🎯 En foco"
-                hideText -> "🎯 ${tasks.size} en foco"
+                first == null -> "🎯 En prioridad"
+                hideText -> "🎯 ${tasks.size} en prioridad"
                 else -> "🎯 " + first.text
             },
             maxLines = 2,

@@ -68,6 +68,9 @@ import com.hilvana.app.ui.components.prompt
 import com.hilvana.app.ui.formatDue
 import kotlinx.coroutines.launch
 
+/** "Sin carpeta" elegido a mano (distinto de "no elegí nada", que usa la última carpeta). */
+private const val NO_FOLDER = -1L
+
 /**
  * Mini-panel de captura. Lo usan la burbuja (ventana superpuesta) y CaptureActivity
  * (Compartir, mosaico de Ajustes rápidos, acceso directo y widget).
@@ -95,7 +98,9 @@ fun CaptureContent(
     /** Texto dictado que hay que agregar al campo (y luego avisar con [onDictationConsumed]). */
     dictatedText: String? = null,
     onDictationConsumed: () -> Unit = {},
-    /** Tareas en foco que se muestran arriba del panel. */
+    /** Carpetas usadas hace poco (la primera es la última): salen primero y la última viene elegida. */
+    recentFolderIds: List<Long> = emptyList(),
+    /** Tareas en prioridad que se muestran arriba del panel. */
     focusTasks: List<Item> = emptyList(),
     hideFocusText: Boolean = false,
     onFocusStep: (Item) -> Unit = {},
@@ -137,8 +142,17 @@ fun CaptureContent(
     }
     val isReminder = effectiveType == ItemType.REMINDER
     val isNote = (effectiveType ?: ItemType.NOTE) == ItemType.NOTE
-    val effectiveFolder = if (!isNote) null
-    else selectedFolderId?.let { id -> folders.firstOrNull { it.id == id } } ?: prefixFolder
+    // Carpetas recientes primero; la última usada viene elegida (si no se escribió "carpeta: …").
+    val sortedFolders = remember(folders, recentFolderIds) {
+        folders.sortedBy { folder -> recentFolderIds.indexOf(folder.id).let { if (it < 0) Int.MAX_VALUE else it } }
+    }
+    val lastUsedFolder = recentFolderIds.firstNotNullOfOrNull { id -> folders.firstOrNull { it.id == id } }
+    val effectiveFolder = when {
+        !isNote -> null
+        selectedFolderId == NO_FOLDER -> null
+        selectedFolderId != null -> folders.firstOrNull { it.id == selectedFolderId }
+        else -> prefixFolder ?: lastUsedFolder
+    }
     val usesPrefix = isNote && prefixFolder != null && effectiveFolder == prefixFolder
     val manualTime = quickTime != null || customDue != null
     val usesDetection = detected?.type != null && !manualTime &&
@@ -304,17 +318,27 @@ fun CaptureContent(
 
                 // Lo propio de cada tipo: carpeta (Nota), aviso (Tarea) o cuándo (Recordatorio).
                 if (isNote && folders.isNotEmpty()) {
-                    Text("Carpeta", style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        if (effectiveFolder != null && effectiveFolder == lastUsedFolder && selectedFolderId == null && prefixFolder == null) {
+                            "Carpeta · la última que usaste"
+                        } else {
+                            "Carpeta"
+                        },
+                        style = MaterialTheme.typography.labelLarge,
+                    )
                     Row(
                         modifier = Modifier.horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        folders.forEach { folder ->
+                        FilterChip(
+                            selected = effectiveFolder == null,
+                            onClick = { selectedFolderId = NO_FOLDER },
+                            label = { Text("Sin carpeta") },
+                        )
+                        sortedFolders.forEach { folder ->
                             FilterChip(
                                 selected = effectiveFolder?.id == folder.id,
-                                onClick = {
-                                    selectedFolderId = if (effectiveFolder?.id == folder.id) null else folder.id
-                                },
+                                onClick = { selectedFolderId = folder.id },
                                 label = { Text(folder.label) },
                             )
                         }

@@ -136,7 +136,7 @@
             android:name=".reminder.ReminderActionReceiver"
             android:exported="false" />
 
-        <!-- 🎯 Tareas en foco: botones de la notificación y empujoncitos -->
+        <!-- 🎯 Tareas en prioridad: botones de la notificación y empujoncitos -->
         <receiver
             android:name=".focus.FocusActionReceiver"
             android:exported="false" />

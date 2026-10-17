@@ -20,8 +20,8 @@ import com.hilvana.app.data.nextStep
 import com.hilvana.app.data.progressText
 
 /**
- * Franja "🎯 En foco" arriba del panel de captura: al abrir la burbuja ves tus tareas
- * en foco y avanzas un paso o la marcas hecha, sin salir de lo que estás haciendo.
+ * Franja "🎯 En prioridad" arriba del panel de captura: al abrir la burbuja ves tus tareas
+ * en prioridad y avanzas un paso o la marcas hecha, sin salir de lo que estás haciendo.
  */
 @Composable
 fun FocusStrip(
@@ -36,7 +36,7 @@ fun FocusStrip(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
     ) {
         Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-            Text("🎯 En foco", style = MaterialTheme.typography.labelLarge)
+            Text("🎯 En prioridad", style = MaterialTheme.typography.labelLarge)
             if (hideText) {
                 // Con la app bloqueada no se muestra el texto encima de otras apps.
                 Text(

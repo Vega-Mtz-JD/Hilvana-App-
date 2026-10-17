@@ -68,6 +68,7 @@ class CapturePanel(
                         folders = folders,
                         focusTasks = focusTasks,
                         hideFocusText = UserPrefs(context).appLockEnabled,
+                        recentFolderIds = UserPrefs(context).recentFolderIds,
                         onFocusStep = { scope.launch { FocusActions.completeNextStep(context, it) } },
                         onFocusDone = { scope.launch { FocusActions.complete(context, it) } },
                         imagePath = imagePath,

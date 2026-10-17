@@ -19,7 +19,7 @@ import com.hilvana.app.data.progressText
 import com.hilvana.app.database
 
 /**
- * 🎯 Tareas en foco: una notificación fija (también en la pantalla de bloqueo) con
+ * 🎯 Tareas en prioridad: una notificación fija (también en la pantalla de bloqueo) con
  * la tarea, su avance y el siguiente paso, para avanzar SIN abrir la app.
  */
 object FocusNotifier {
@@ -29,7 +29,7 @@ object FocusNotifier {
     private const val CHANNEL_FOCUS = "focus"
     private const val CHANNEL_NUDGE = "focus_nudge"
 
-    /** Vuelve a dibujar la notificación fija según las tareas en foco (o la quita). */
+    /** Vuelve a dibujar la notificación fija según las tareas en prioridad (o la quita). */
     suspend fun refresh(context: Context) {
         val pinned = context.database.itemDao().getPinned()
         val notifications = NotificationManagerCompat.from(context)
@@ -64,14 +64,14 @@ object FocusNotifier {
     private fun createChannels(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(
-            NotificationChannel(CHANNEL_FOCUS, "Tareas en foco", NotificationManager.IMPORTANCE_LOW).apply {
-                description = "Tus tareas en foco, siempre a la vista"
+            NotificationChannel(CHANNEL_FOCUS, "Tareas en prioridad", NotificationManager.IMPORTANCE_LOW).apply {
+                description = "Tus tareas en prioridad, siempre a la vista"
                 setShowBadge(false)
             }
         )
         manager.createNotificationChannel(
             NotificationChannel(CHANNEL_NUDGE, "Empujoncitos", NotificationManager.IMPORTANCE_DEFAULT).apply {
-                description = "Avisos suaves para avanzar con tus tareas en foco"
+                description = "Avisos suaves para avanzar con tus tareas en prioridad"
             }
         )
     }
@@ -82,8 +82,8 @@ object FocusNotifier {
 
         val title = when {
             nudge -> "🎯 ¿Avanzaste? ${first.text}"
-            pinned.size == 1 -> "🎯 En foco: ${first.text}"
-            else -> "🎯 En foco (${pinned.size})"
+            pinned.size == 1 -> "🎯 En prioridad: ${first.text}"
+            else -> "🎯 En prioridad (${pinned.size})"
         }
         val summary = buildString {
             if (pinned.size > 1) append(first.text).append(" · ")
@@ -131,7 +131,7 @@ object FocusNotifier {
             builder.setPublicVersion(
                 NotificationCompat.Builder(context, CHANNEL_FOCUS)
                     .setSmallIcon(R.drawable.ic_stat_hilvana).setColor(ContextCompat.getColor(context, R.color.hilvana_teal))
-                    .setContentTitle("🎯 ${pinned.size} ${if (pinned.size == 1) "tarea" else "tareas"} en foco")
+                    .setContentTitle("🎯 ${pinned.size} ${if (pinned.size == 1) "tarea" else "tareas"} en prioridad")
                     .build()
             )
         } else {

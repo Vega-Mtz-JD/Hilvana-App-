@@ -8,7 +8,7 @@ import com.hilvana.app.data.UserPrefs
 import java.util.Calendar
 
 /**
- * Empujoncitos: cada N horas un aviso suave con la tarea en foco, nunca de noche.
+ * Empujoncitos: cada N horas un aviso suave con la tarea en prioridad, nunca de noche.
  * Usa alarmas inexactas (no necesitan el permiso de alarmas exactas).
  */
 object FocusNudges {

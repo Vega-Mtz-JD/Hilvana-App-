@@ -176,7 +176,7 @@ class BubbleService : Service() {
                 setStroke(dp(3), BUBBLE_BORDER)
             }
         }
-        // Globito con cuántas tareas hay en foco (oculto si no hay).
+        // Globito con cuántas tareas hay en prioridad (oculto si no hay).
         val badge = TextView(this).apply {
             textSize = 11f
             setTextColor(BADGE_TEXT)
@@ -199,7 +199,7 @@ class BubbleService : Service() {
         bubbleView = view
         focusBadge = badge
 
-        // El número se actualiza solo cuando cambian las tareas en foco.
+        // El número se actualiza solo cuando cambian las tareas en prioridad.
         scope.launch {
             repository.pinned.collect { pinned ->
                 focusBadge?.apply {
@@ -209,7 +209,7 @@ class BubbleService : Service() {
                 bubbleView?.contentDescription = if (pinned.isEmpty()) {
                     "Burbuja de Hilvana: toca para capturar"
                 } else {
-                    "Burbuja de Hilvana: ${pinned.size} tareas en foco. Toca para verlas o capturar"
+                    "Burbuja de Hilvana: ${pinned.size} tareas en prioridad. Toca para verlas o capturar"
                 }
             }
         }

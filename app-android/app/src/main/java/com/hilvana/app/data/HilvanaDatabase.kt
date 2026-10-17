@@ -80,7 +80,7 @@ abstract class HilvanaDatabase : RoomDatabase() {
             }
         }
 
-        /** v6 → v7: checklist de pasos y tareas en foco. */
+        /** v6 → v7: checklist de pasos y tareas en prioridad. */
         private val MIGRATION_6_7 = object : Migration(6, 7) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE items ADD COLUMN checklist TEXT NOT NULL DEFAULT '[]'")

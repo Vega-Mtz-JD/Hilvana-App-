@@ -29,7 +29,7 @@ interface ItemDao {
     @Query("SELECT * FROM items ORDER BY createdAt")
     suspend fun getAll(): List<Item>
 
-    /** Tareas en foco pendientes (las más importantes primero). */
+    /** Tareas en prioridad pendientes (las más importantes primero). */
     @Query("SELECT * FROM items WHERE pinned = 1 AND done = 0 ORDER BY priority DESC, createdAt")
     suspend fun getPinned(): List<Item>
 

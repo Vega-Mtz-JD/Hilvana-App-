@@ -35,7 +35,7 @@ fun TasksScreen(
     // Lo más importante primero; a igual importancia, lo que vence antes.
     val pending = tasks.filter { !it.done }
         .sortedWith(compareByDescending<Item> { it.priority }.thenBy(nullsLast()) { it.dueAt })
-    // Las tareas en foco van primero, en su propia sección.
+    // Las tareas en prioridad van primero, en su propia sección.
     val (focus, others) = pending.partition { it.pinned }
     val completed = tasks.filter { it.done }
 
@@ -48,7 +48,7 @@ fun TasksScreen(
             item { EmptyState("Sin tareas pendientes 🎉") }
         }
         if (focus.isNotEmpty()) {
-            item(key = "focus-header") { SectionHeader("🎯 En foco · también en tus notificaciones") }
+            item(key = "focus-header") { SectionHeader("🎯 En prioridad · también en tus notificaciones") }
             items(focus, key = { it.id }) { item ->
                 ItemCard(item = item, onClick = { onOpen(item) }, onToggleDone = { onToggleDone(item) })
             }

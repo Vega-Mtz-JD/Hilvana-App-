@@ -8,7 +8,7 @@ import com.hilvana.app.data.withNextStepDone
 import com.hilvana.app.repository
 
 /**
- * Lo que se puede hacer con una tarea en foco desde fuera de la app (notificación,
+ * Lo que se puede hacer con una tarea en prioridad desde fuera de la app (notificación,
  * burbuja, widget). Si se marca el último paso, la tarea queda hecha.
  */
 object FocusActions {
