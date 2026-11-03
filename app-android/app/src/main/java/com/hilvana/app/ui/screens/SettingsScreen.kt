@@ -239,24 +239,31 @@ fun SettingsScreen(
                 }
             }
 
-            Text("Otras formas de capturar", style = MaterialTheme.typography.titleMedium)
+            Text("Atajos", style = MaterialTheme.typography.titleMedium)
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Sin burbuja también puedes anotar rápido:", style = MaterialTheme.typography.titleSmall)
+                    Text("Mostrar la burbuja sin abrir la app:", style = MaterialTheme.typography.titleSmall)
                     Text(
-                        "• Compartir → Hilvana desde cualquier app (textos y enlaces).\n" +
-                            "• Mantén presionado el ícono de Hilvana → Capturar.\n" +
-                            "• Mosaico \"Capturar\" en Ajustes rápidos (baja la barra de notificaciones).",
+                        "• Mosaico \"Burbuja\" en Ajustes rápidos (baja la barra de notificaciones).\n" +
+                            "• Widget \"Burbuja\": mantén presionada la pantalla de inicio → Widgets → Hilvana.\n" +
+                            "Tócalos otra vez para ocultarla.",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     if (onAddCaptureTile != null) {
                         OutlinedButton(onClick = onAddCaptureTile) { Text("Agregar mosaico a Ajustes rápidos") }
                     } else {
                         Text(
-                            "Para el mosaico: baja la barra, toca el lápiz y arrastra \"Capturar\".",
+                            "Para el mosaico: baja la barra, toca el lápiz y arrastra \"Burbuja\".",
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
+                    Text("Anotar sin burbuja:", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "• Compartir → Hilvana desde cualquier app (textos y enlaces).\n" +
+                            "• Mantén presionado el ícono de Hilvana → Capturar.\n" +
+                            "• Widget \"Captura rápida\".",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
                 }
             }
 

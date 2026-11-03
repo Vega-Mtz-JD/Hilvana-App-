@@ -3,6 +3,9 @@
     <string name="capture_label">Capturar</string>
     <string name="shortcut_capture_short">Capturar</string>
     <string name="shortcut_capture_long">Capturar una idea</string>
+    <string name="widget_bubble_name">Burbuja</string>
+    <string name="widget_bubble_description">Toca el ícono para mostrar u ocultar la burbuja flotante</string>
+    <string name="tile_bubble_label">Burbuja</string>
     <string name="widget_quick_capture_name">Captura rápida</string>
     <string name="widget_quick_capture_description">Anota algo en 2 segundos desde la pantalla de inicio</string>
     <string name="widget_my_day_name">Mi día</string>

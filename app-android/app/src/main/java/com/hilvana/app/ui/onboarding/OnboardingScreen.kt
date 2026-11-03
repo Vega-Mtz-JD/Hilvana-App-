@@ -362,8 +362,8 @@ private fun DoneStep(name: String, canShowBubble: Boolean) {
         if (canShowBubble) {
             "Toca la burbuja cuando se te ocurra algo. Prueba escribir:\n\"mañana a las 5 llamar a mamá\""
         } else {
-            "Sin burbuja también puedes anotar rápido: Compartir → Hilvana, el mosaico \"Capturar\" de " +
-                "Ajustes rápidos o mantener presionado el ícono de la app."
+            "Sin burbuja también puedes anotar rápido: Compartir → Hilvana, el widget \"Captura rápida\" " +
+                "o mantener presionado el ícono de la app."
         },
         style = MaterialTheme.typography.bodyLarge,
     )

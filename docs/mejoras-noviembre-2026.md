@@ -20,7 +20,7 @@ que en la nota se vea como encabezado (del link, de la descripción o de la idea
 - Si no hay título pero el link trae uno (vista previa), se sigue mostrando el del link.
 - El título entra en el respaldo (Drive y archivo) y en el buscador.
 
-## 2. Abrir la burbuja desde un widget y desde el mosaico "Capturar" `[ ]`
+## 2. Abrir la burbuja desde un widget y desde el mosaico "Capturar" `[p]`
 
 **Lo que pidió:** un widget de ícono que al tocarlo inicie la burbuja, y que el mosaico del centro de
 control también inicie la burbuja (hoy abre el panel de captura).

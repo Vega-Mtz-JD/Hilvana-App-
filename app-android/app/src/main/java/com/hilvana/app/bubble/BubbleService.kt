@@ -29,6 +29,7 @@ import android.graphics.Typeface
 import androidx.core.content.res.ResourcesCompat
 import android.widget.FrameLayout
 import com.hilvana.app.capture.CaptureActivity
+import com.hilvana.app.capture.CaptureTileService
 import android.widget.TextView
 import android.widget.Toast
 import com.hilvana.app.repository
@@ -91,6 +92,7 @@ class BubbleService : Service() {
         startInForeground()
         if (bubbleView == null) showBubble()
         _isRunning.value = true
+        CaptureTileService.refresh(this)
         return START_STICKY
     }
 
@@ -101,6 +103,7 @@ class BubbleService : Service() {
         bubbleView?.let { windowManager.removeView(it) }
         bubbleView = null
         _isRunning.value = false
+        CaptureTileService.refresh(this)
         super.onDestroy()
     }
 

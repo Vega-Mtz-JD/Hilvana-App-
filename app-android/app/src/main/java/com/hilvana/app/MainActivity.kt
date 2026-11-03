@@ -215,22 +215,22 @@ class MainActivity : FragmentActivity() {
         startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri()))
     }
 
-    /** Android 13+: pide al sistema agregar el mosaico "Capturar" con un diálogo. */
+    /** Android 13+: pide al sistema agregar el mosaico "Burbuja" con un diálogo. */
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun requestAddCaptureTile() {
         getSystemService(StatusBarManager::class.java).requestAddTileService(
             ComponentName(this, CaptureTileService::class.java),
-            getString(R.string.capture_label),
-            Icon.createWithResource(this, R.drawable.ic_capture),
+            getString(R.string.tile_bubble_label),
+            Icon.createWithResource(this, R.drawable.ic_stat_hilvana),
             mainExecutor,
         ) { result ->
             val message = when (result) {
                 StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED,
                 StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED ->
-                    "El mosaico \"Capturar\" está en tus Ajustes rápidos"
+                    "El mosaico \"Burbuja\" está en tus Ajustes rápidos"
                 StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_NOT_ADDED -> null
                 // Algunos fabricantes no lo permiten desde la app.
-                else -> "Agrégalo a mano: baja la barra, toca el lápiz y arrastra \"Capturar\""
+                else -> "Agrégalo a mano: baja la barra, toca el lápiz y arrastra \"Burbuja\""
             }
             message?.let { Toast.makeText(this, it, Toast.LENGTH_LONG).show() }
         }
