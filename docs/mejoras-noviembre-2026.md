@@ -69,7 +69,7 @@ y mejorar algo en las demás pestañas.
   ícono de video. Si algún día TikTok vuelve a dar la miniatura, se usa sola.
 - Con el título del punto 1 el usuario puede ponerle nombre al video.
 
-## 5. Buscar, ordenar y organizar notas `[ ]`
+## 5. Buscar, ordenar y organizar notas `[p]`
 
 **Lo que pidió:** buscar y ordenar las notas por título, descripción, categoría, carpeta, etc.
 

@@ -58,4 +58,37 @@ class SearchEngineTest {
         assertEquals(listOf(0..6), SearchEngine.highlightRanges("Canción para", "cancion"))
         assertEquals(listOf(9..11), SearchEngine.highlightRanges("Pagar la luz", "LUZ"))
     }
+
+    // ---- Título, categoría, carpeta y orden ----
+
+    private val tech = Folder(id = 10, name = "Videos", category = "Tecnología")
+    private val work = Folder(id = 11, name = "Ideas", category = "Trabajo")
+    private val notes = listOf(
+        Item(id = 20, text = "https://vm.tiktok.com/abc", title = "Truco de Android", type = ItemType.NOTE, createdAt = 20, folderId = 10, priority = 2),
+        Item(id = 21, text = "Bot para clientes", type = ItemType.NOTE, createdAt = 21, folderId = 11, priority = 5),
+        Item(id = 22, text = "android studio sin emulador", type = ItemType.NOTE, createdAt = 22),
+    )
+    private fun noteIds(query: String, filters: SearchFilters = SearchFilters(), sort: SortOrder = SortOrder.RELEVANCE) =
+        SearchEngine.search(notes, listOf(tech, work), query, filters, sort).map { it.id }
+
+    // La 22 empieza con "android" en el texto; la 20 lo tiene en el título (el link no dice nada).
+    @Test fun buscaEnElTitulo() = assertEquals(listOf(22L, 20L), noteIds("android"))
+
+    @Test fun tituloQueEmpiezaConLoBuscadoVaPrimero() = assertEquals(listOf(20L), noteIds("truco"))
+
+    @Test fun buscaPorCategoria() = assertEquals(listOf(20L), noteIds("tecnologia"))
+
+    @Test fun filtraPorCategoriaYCarpeta() {
+        assertEquals(listOf(21L), noteIds("", SearchFilters(category = "Trabajo")))
+        assertEquals(listOf(20L), noteIds("", SearchFilters(folderId = 10)))
+    }
+
+    @Test fun ordenes() {
+        val all = SearchFilters(type = ItemType.NOTE)
+        assertEquals(listOf(22L, 21L, 20L), noteIds("", all, SortOrder.NEWEST))
+        assertEquals(listOf(20L, 21L, 22L), noteIds("", all, SortOrder.OLDEST))
+        // A–Z usa el título si lo tiene: "android…", "Bot…", "Truco…".
+        assertEquals(listOf(22L, 21L, 20L), noteIds("", all, SortOrder.ALPHABETICAL))
+        assertEquals(listOf(21L, 20L, 22L), noteIds("", all, SortOrder.IMPORTANCE))
+    }
 }

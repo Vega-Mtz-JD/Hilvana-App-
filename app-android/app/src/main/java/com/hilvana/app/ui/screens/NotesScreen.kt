@@ -16,8 +16,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -37,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -44,11 +47,16 @@ import androidx.compose.ui.unit.dp
 import com.hilvana.app.data.Folder
 import com.hilvana.app.data.Item
 import com.hilvana.app.data.ItemType
+import com.hilvana.app.data.UserPrefs
 import com.hilvana.app.ui.components.EmptyState
 import com.hilvana.app.ui.components.HilvanaIcons
 import com.hilvana.app.ui.components.IconText
 import com.hilvana.app.ui.components.ItemCard
 import com.hilvana.app.ui.components.SectionHeader
+import com.hilvana.app.ui.components.SortMenu
+import com.hilvana.app.ui.search.SearchEngine
+import com.hilvana.app.ui.search.SearchFilters
+import com.hilvana.app.ui.search.SortOrder
 import com.hilvana.app.ui.components.iconVector
 
 private const val FOLDER_COLUMNS = 3
@@ -82,6 +90,15 @@ fun NotesScreen(
     val categories = folders.mapNotNull { it.category }.distinct().sortedBy { it.lowercase() }
     var collapsedCategories by rememberSaveable { mutableStateOf(setOf<String>()) }
     var renamingCategory by remember { mutableStateOf<String?>(null) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var searchSort by rememberSaveable { mutableStateOf(SortOrder.RELEVANCE) }
+    // El orden de las listas se recuerda entre aperturas de la app.
+    val prefs = UserPrefs(LocalContext.current)
+    var sort by remember { mutableStateOf(prefs.notesSort) }
+    val onSortChange: (SortOrder) -> Unit = {
+        sort = it
+        prefs.notesSort = it
+    }
 
     // Si la carpeta abierta se borró, volver a la vista de carpetas.
     LaunchedEffect(openFolderId, folders) {
@@ -93,7 +110,79 @@ fun NotesScreen(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        if (openFolder == null) {
+        if (openFolder != null) {
+            item(key = "folder-header") {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { onOpenFolder(null) }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver a carpetas")
+                    }
+                    IconText(
+                        openFolder.iconVector,
+                        openFolder.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        iconTint = MaterialTheme.colorScheme.primary,
+                        iconSize = 24.dp,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (openFolder.locked) {
+                        Icon(
+                            HilvanaIcons.Lock,
+                            contentDescription = "Protegida",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                    IconButton(onClick = { editingFolder = openFolder }) {
+                        Icon(Icons.Filled.Edit, contentDescription = "Editar carpeta")
+                    }
+                }
+            }
+        }
+
+        item(key = "notes-search") {
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = { Text(if (openFolder == null) "Buscar en tus notas…" else "Buscar en ${openFolder.name}…") },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (query.isNotEmpty()) {
+                        IconButton(onClick = { query = "" }) {
+                            Icon(Icons.Filled.Close, contentDescription = "Borrar búsqueda")
+                        }
+                    }
+                },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
+        if (query.isNotBlank()) {
+            // Buscando: título, texto, link, carpeta y categoría (dentro de la carpeta si hay una abierta).
+            val results = SearchEngine.search(
+                notes, folders, query,
+                SearchFilters(type = ItemType.NOTE, includeDone = true, folderId = openFolder?.id),
+                searchSort,
+            )
+            item(key = "search-header") {
+                ListHeader(
+                    if (results.size == 1) "1 resultado" else "${results.size} resultados",
+                    searchSort,
+                    { searchSort = it },
+                    options = SortOrder.entries,
+                )
+            }
+            if (results.isEmpty()) item { EmptyState("No hay notas con \"${query.trim()}\".") }
+            items(results, key = { "found-${it.id}" }) { note ->
+                ItemCard(
+                    item = note,
+                    onClick = { onOpen(note) },
+                    folder = note.folderId?.let(foldersById::get),
+                    highlight = query,
+                )
+            }
+        } else if (openFolder == null) {
             val folderRows: (String, List<Folder?>) -> Unit = { keyPrefix, tiles ->
                 tiles.chunked(FOLDER_COLUMNS).forEach { row ->
                     item(key = "$keyPrefix-${row.firstOrNull()?.id ?: "new"}") {
@@ -148,42 +237,20 @@ fun NotesScreen(
                 folderRows("uncategorized", uncategorized + null)
             }
 
-            item { SectionHeader("Todas las notas (${notes.size})") }
+            item(key = "all-notes") {
+                ListHeader("Todas las notas (${notes.size})", sort, onSortChange)
+            }
             if (notes.isEmpty()) {
                 item { EmptyState("Aún no hay notas.\nToca + o escribe en la burbuja \"ideas: …\".") }
             }
-            items(notes, key = { it.id }) { note ->
+            items(SearchEngine.sorted(notes, sort), key = { it.id }) { note ->
                 ItemCard(item = note, onClick = { onOpen(note) }, folder = note.folderId?.let(foldersById::get))
             }
         } else {
-            item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { onOpenFolder(null) }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver a carpetas")
-                    }
-                    IconText(
-                        openFolder.iconVector,
-                        openFolder.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        iconTint = MaterialTheme.colorScheme.primary,
-                        iconSize = 24.dp,
-                        maxLines = 1,
-                        modifier = Modifier.weight(1f),
-                    )
-                    if (openFolder.locked) {
-                        Icon(
-                            HilvanaIcons.Lock,
-                            contentDescription = "Protegida",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    }
-                    IconButton(onClick = { editingFolder = openFolder }) {
-                        Icon(Icons.Filled.Edit, contentDescription = "Editar carpeta")
-                    }
-                }
-            }
             val inFolder = notes.filter { it.folderId == openFolder.id }
+            if (inFolder.size > 1) {
+                item(key = "folder-sort") { ListHeader("${inFolder.size} notas", sort, onSortChange) }
+            }
             if (inFolder.isEmpty()) {
                 item {
                     EmptyState(
@@ -191,7 +258,7 @@ fun NotesScreen(
                     )
                 }
             }
-            items(inFolder, key = { it.id }) { note ->
+            items(SearchEngine.sorted(inFolder, sort), key = { it.id }) { note ->
                 ItemCard(item = note, onClick = { onOpen(note) })
             }
         }
@@ -226,6 +293,20 @@ fun NotesScreen(
                 renamingCategory = null
             },
         )
+    }
+}
+
+/** Título de una lista con el menú "Ordenar" a la derecha. */
+@Composable
+private fun ListHeader(
+    title: String,
+    sort: SortOrder,
+    onSortChange: (SortOrder) -> Unit,
+    options: List<SortOrder> = SortOrder.entries - SortOrder.RELEVANCE,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        SectionHeader(title, modifier = Modifier.weight(1f))
+        SortMenu(selected = sort, onSelect = onSortChange, options = options)
     }
 }
 

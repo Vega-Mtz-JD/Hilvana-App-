@@ -2,6 +2,7 @@ package com.hilvana.app.data
 
 import android.content.Context
 import androidx.core.content.edit
+import com.hilvana.app.ui.search.SortOrder
 import com.hilvana.app.ui.theme.ThemeMode
 
 /** Preferencias simples del usuario (perfil local, plan §6.1). */
@@ -71,6 +72,11 @@ class UserPrefs(context: Context) {
         get() = prefs.getBoolean(KEY_LINK_PREVIEWS, true)
         set(value) = prefs.edit { putBoolean(KEY_LINK_PREVIEWS, value) }
 
+    /** Cómo se ordenan las notas en la pestaña Notas. */
+    var notesSort: SortOrder
+        get() = SortOrder.entries.firstOrNull { it.name == prefs.getString(KEY_NOTES_SORT, null) } ?: SortOrder.NEWEST
+        set(value) = prefs.edit { putString(KEY_NOTES_SORT, value.name) }
+
     /** Meta diaria: cuántas cosas completar al día (0 = apagada). */
     var dailyGoal: Int
         get() = prefs.getInt(KEY_DAILY_GOAL, 3)
@@ -88,6 +94,7 @@ class UserPrefs(context: Context) {
 
     private companion object {
         const val KEY_RECENT_FOLDERS = "recent_folders"
+        const val KEY_NOTES_SORT = "notes_sort"
         const val KEY_GOOGLE_EMAIL = "google_email"
         const val KEY_GOOGLE_NAME = "google_name"
         const val KEY_CLOUD_AUTO = "cloud_auto_backup"

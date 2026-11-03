@@ -9,6 +9,7 @@ import androidx.compose.material.icons.automirrored.outlined.StickyNote2
 import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.Celebration
 import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.Cloud
@@ -85,6 +86,7 @@ object HilvanaIcons {
     val Star = Icons.Outlined.StarOutline
     val Folder = Icons.Outlined.Folder
     val Video = Icons.Outlined.SmartDisplay
+    val Category = Icons.Outlined.Category
 }
 
 val ItemType.icon: ImageVector
