@@ -8,7 +8,7 @@ plugins {
 
 // Versión de la app: la cambia herramientas\publicar-beta.ps1 al sacar una versión nueva.
 // versionCode sale de la versión (0.10.0 → 1000) para que siempre suba.
-val hilvanaVersion = "0.9.0"
+val hilvanaVersion = "0.10.0"
 val hilvanaVersionCode = hilvanaVersion.split(".").map { it.toInt() }
     .let { (major, minor, patch) -> major * 10_000 + minor * 100 + patch }
 
