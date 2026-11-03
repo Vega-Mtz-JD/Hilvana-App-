@@ -56,7 +56,7 @@ fun ItemCard(
     trailing: (@Composable () -> Unit)? = null,
 ) {
     val link = remember(item.text) { LINK.find(item.text)?.value }
-    val hasPreview = item.linkTitle != null || item.linkImage != null
+    val hasPreview = item.linkTitle != null || item.linkImage != null || item.linkSite != null
     // Con vista previa, la URL larga no aporta: se muestra solo el resto del texto.
     val shownText = remember(item.text, hasPreview) {
         if (hasPreview && link != null) item.text.replace(link, "").trim() else item.text
@@ -210,8 +210,24 @@ private fun LinkPreviewRow(item: Item, onOpen: () -> Unit) {
             .clickable(onClick = onOpen),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        item.linkImage?.let { path ->
-            ItemImage(path = path, maxSide = 240, modifier = Modifier.size(76.dp))
+        val linkImage = item.linkImage
+        if (linkImage != null) {
+            ItemImage(path = linkImage, maxSide = 240, modifier = Modifier.size(76.dp))
+        } else {
+            // Sin miniatura (TikTok ya no la da): un ícono para que siga pareciendo una vista previa.
+            Box(
+                modifier = Modifier
+                    .size(76.dp)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    if (item.linkSite?.startsWith("TikTok") == true) HilvanaIcons.Video else HilvanaIcons.Link,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(32.dp),
+                )
+            }
         }
         Column(
             Modifier

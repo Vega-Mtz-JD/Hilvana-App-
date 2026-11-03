@@ -39,6 +39,7 @@ import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.ShoppingCart
+import androidx.compose.material.icons.outlined.SmartDisplay
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.material.icons.outlined.TrackChanges
@@ -83,6 +84,7 @@ object HilvanaIcons {
     val Celebrate = Icons.Outlined.Celebration
     val Star = Icons.Outlined.StarOutline
     val Folder = Icons.Outlined.Folder
+    val Video = Icons.Outlined.SmartDisplay
 }
 
 val ItemType.icon: ImageVector

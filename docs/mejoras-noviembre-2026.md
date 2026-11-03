@@ -52,7 +52,7 @@ y mejorar algo en las demás pestañas.
 - Bandeja: botón "Marcar todo como revisado".
 - Tareas y Notas: ordenar (ver punto 5).
 
-## 4. Miniaturas de TikTok `[ ]`
+## 4. Miniaturas de TikTok `[p]`
 
 **Lo que pidió:** los links de Facebook muestran miniatura, los de TikTok no.
 

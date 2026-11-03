@@ -44,8 +44,16 @@ object LinkPreviewFetcher {
         when (LinkPreviewParser.providerOf(secureUrl)) {
             LinkPreviewParser.Provider.YOUTUBE ->
                 LinkPreviewParser.parseOEmbed(url, get("https://www.youtube.com/oembed?format=json&url=${encode(secureUrl)}"))
-            LinkPreviewParser.Provider.TIKTOK ->
-                LinkPreviewParser.parseOEmbed(url, get("https://www.tiktok.com/oembed?url=${encode(secureUrl)}"))
+            LinkPreviewParser.Provider.TIKTOK -> {
+                // Los links que comparte la app de TikTok son cortos: se siguen hasta el video.
+                val videoUrl = (if (LinkPreviewParser.isTiktokShortLink(secureUrl)) redirectTarget(secureUrl) else null)
+                    ?: secureUrl
+                val clean = videoUrl.substringBefore('?')
+                val oEmbed = runCatching {
+                    LinkPreviewParser.parseOEmbed(url, get("https://www.tiktok.com/oembed?url=${encode(clean)}"))
+                }.getOrNull()
+                LinkPreviewParser.tiktokPreview(url, clean, oEmbed)
+            }
             LinkPreviewParser.Provider.OTHER ->
                 LinkPreviewParser.parseHtml(secureUrl, get(secureUrl, stopAtBody = true)).copy(url = url)
         }
@@ -61,6 +69,22 @@ object LinkPreviewFetcher {
             setRequestProperty("User-Agent", USER_AGENT)
             setRequestProperty("Accept-Language", "es,en;q=0.8")
         }
+
+    /** A dónde redirige [url] (hasta 3 saltos), sin descargar la página. Null si no redirige. */
+    private fun redirectTarget(url: String): String? {
+        var current = url
+        repeat(3) {
+            val connection = open(current).apply { instanceFollowRedirects = false }
+            try {
+                if (connection.responseCode !in 300..399) return current.takeIf { it != url }
+                val location = connection.getHeaderField("Location") ?: return null
+                current = URL(URL(current), location).toString()
+            } finally {
+                connection.disconnect()
+            }
+        }
+        return current
+    }
 
     /** Descarga texto; con [stopAtBody] deja de leer al llegar al <body> (lo útil está en <head>). */
     private fun get(url: String, stopAtBody: Boolean = false): String {

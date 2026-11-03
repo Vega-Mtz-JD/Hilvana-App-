@@ -9,8 +9,10 @@ data class LinkPreview(
     val title: String?,
     val site: String?,
     val imageUrl: String?,
+    /** Sin título ni imagen pero vale la pena mostrar el sitio (TikTok). */
+    val siteIsEnough: Boolean = false,
 ) {
-    val isUseful: Boolean get() = !title.isNullOrBlank() || imageUrl != null
+    val isUseful: Boolean get() = !title.isNullOrBlank() || imageUrl != null || siteIsEnough
 }
 
 /**
@@ -50,6 +52,36 @@ object LinkPreviewParser {
             imageUrl = o.optString("thumbnail_url").ifBlank { null },
         )
     }.getOrNull()
+
+    private val TIKTOK_AUTHOR = Regex("/@([\\w.]+)")
+
+    /** "@usuario" de un link de TikTok (https://www.tiktok.com/@ana/video/123), si lo trae. */
+    fun tiktokAuthor(url: String): String? = runCatching { URI(url).path }.getOrNull()
+        ?.let { TIKTOK_AUTHOR.find(it)?.groupValues?.get(1) }
+        ?.let { "@$it" }
+
+    /** ¿Es un link corto de TikTok (vm.tiktok.com, tiktok.com/t/…) que hay que seguir hasta el video? */
+    fun isTiktokShortLink(url: String): Boolean {
+        val uri = runCatching { URI(url) }.getOrNull() ?: return false
+        val host = uri.host.orEmpty().lowercase()
+        return host == "vm.tiktok.com" || host == "vt.tiktok.com" || uri.path.orEmpty().startsWith("/t/")
+    }
+
+    /**
+     * Vista previa de TikTok. Su oEmbed ya casi nunca trae miniatura ni título (nov 2026):
+     * en ese caso queda "TikTok · @usuario" sin imagen, para que al menos se vea de dónde es.
+     * [videoUrl] es el link ya seguido hasta el video (para sacar el usuario).
+     */
+    fun tiktokPreview(url: String, videoUrl: String, oEmbed: LinkPreview?): LinkPreview {
+        val author = tiktokAuthor(videoUrl)
+        return LinkPreview(
+            url = url,
+            title = oEmbed?.title,
+            site = listOfNotNull("TikTok", author).joinToString(" · "),
+            imageUrl = oEmbed?.imageUrl,
+            siteIsEnough = true,
+        )
+    }
 
     fun parseHtml(url: String, html: String): LinkPreview {
         val meta = mutableMapOf<String, String>()

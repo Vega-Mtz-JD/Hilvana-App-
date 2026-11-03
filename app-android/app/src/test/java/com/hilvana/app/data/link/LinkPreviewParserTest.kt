@@ -2,7 +2,9 @@ package com.hilvana.app.data.link
 
 import com.hilvana.app.data.link.LinkPreviewParser.Provider
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LinkPreviewParserTest {
@@ -49,5 +51,35 @@ class LinkPreviewParserTest {
         assertEquals("Cómo hacer pan", p.title)
         assertEquals("YouTube", p.site)
         assertEquals("https://i.ytimg.com/vi/abc/hqdefault.jpg", p.imageUrl)
+    }
+
+    @Test fun tiktokSinMiniaturaMuestraElUsuario() {
+        // Así responde hoy el oEmbed de TikTok: sin título ni miniatura.
+        val json = """{"version":"1.0","type":"video","provider_name":"TikTok","html":"<iframe></iframe>"}"""
+        val video = "https://www.tiktok.com/@ana.cocina/video/123"
+        val oEmbed = LinkPreviewParser.parseOEmbed(video, json)
+        val p = LinkPreviewParser.tiktokPreview("https://vm.tiktok.com/xyz/", video, oEmbed)
+        assertEquals("TikTok · @ana.cocina", p.site)
+        assertNull(p.imageUrl)
+        assertTrue(p.isUseful)
+        assertEquals("https://vm.tiktok.com/xyz/", p.url)
+    }
+
+    @Test fun tiktokConMiniaturaLaUsa() {
+        val json = """{"title":"Pan casero","thumbnail_url":"https://p16.tiktokcdn.com/a.jpg","provider_name":"TikTok"}"""
+        val video = "https://www.tiktok.com/@ana/video/1"
+        val p = LinkPreviewParser.tiktokPreview(video, video, LinkPreviewParser.parseOEmbed(video, json))
+        assertEquals("Pan casero", p.title)
+        assertEquals("https://p16.tiktokcdn.com/a.jpg", p.imageUrl)
+    }
+
+    @Test fun linksDeTiktok() {
+        assertTrue(LinkPreviewParser.isTiktokShortLink("https://vm.tiktok.com/ZMabc/"))
+        assertTrue(LinkPreviewParser.isTiktokShortLink("https://www.tiktok.com/t/ZTabc/"))
+        assertFalse(LinkPreviewParser.isTiktokShortLink("https://www.tiktok.com/@ana/video/1"))
+        assertEquals("@ana", LinkPreviewParser.tiktokAuthor("https://www.tiktok.com/@ana/video/1"))
+        // El link corto a veces redirige sin usuario: "@/video/…".
+        assertNull(LinkPreviewParser.tiktokAuthor("https://www.tiktok.com/@/video/1"))
+        assertEquals("TikTok", LinkPreviewParser.tiktokPreview("u", "https://www.tiktok.com/@/video/1", null).site)
     }
 }
