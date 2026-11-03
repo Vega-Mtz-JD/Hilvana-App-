@@ -3,7 +3,10 @@ package com.hilvana.app.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.hilvana.app.BuildConfig
 import com.hilvana.app.data.Folder
+import com.hilvana.app.data.update.AppRelease
+import com.hilvana.app.data.update.UpdateChecker
 import com.hilvana.app.data.Item
 import com.hilvana.app.repository
 import android.app.PendingIntent
@@ -235,6 +238,46 @@ class ItemsViewModel(application: Application) : AndroidViewModel(application) {
         prefs.focusNudgeHours = hours
         _nudgeHours.value = hours
         FocusNudges.reschedule(getApplication())
+    }
+
+    // ---------- Versiones de prueba (GitHub Releases) ----------
+
+    private val _availableUpdate = MutableStateFlow<AppRelease?>(null)
+    /** Versión nueva que el usuario no ha cerrado con "Después" (para el aviso de Inicio). */
+    val availableUpdate: StateFlow<AppRelease?> = _availableUpdate.asStateFlow()
+    private val _updateChecks = MutableStateFlow(prefs.updateChecks)
+    val updateChecks: StateFlow<Boolean> = _updateChecks.asStateFlow()
+
+    init {
+        if (prefs.updateChecks) {
+            viewModelScope.launch {
+                _availableUpdate.value = UpdateChecker.check(getApplication())
+                    ?.takeIf { it.version != prefs.dismissedUpdate }
+            }
+        }
+    }
+
+    /** "Buscar actualizaciones" en Ajustes: revisa ya y avisa el resultado. */
+    fun checkForUpdatesNow() {
+        viewModelScope.launch {
+            val release = UpdateChecker.check(getApplication(), force = true)
+            _availableUpdate.value = release
+            toast(
+                if (release != null) "Hay una versión nueva: ${release.version}"
+                else "Tienes la última versión (${BuildConfig.VERSION_NAME})"
+            )
+        }
+    }
+
+    fun dismissUpdate() {
+        _availableUpdate.value?.let { prefs.dismissedUpdate = it.version }
+        _availableUpdate.value = null
+    }
+
+    fun setUpdateChecks(enabled: Boolean) {
+        prefs.updateChecks = enabled
+        _updateChecks.value = enabled
+        if (!enabled) _availableUpdate.value = null
     }
 
     fun save(item: Item) {

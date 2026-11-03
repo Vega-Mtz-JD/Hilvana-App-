@@ -55,6 +55,7 @@ fun TodayScreen(
     onOpenCalendar: () -> Unit,
     modifier: Modifier = Modifier,
     banner: (@Composable () -> Unit)? = null,
+    updateBanner: (@Composable () -> Unit)? = null,
     goalCard: (@Composable () -> Unit)? = null,
 ) {
     val groups = groupForToday(items)
@@ -85,6 +86,7 @@ fun TodayScreen(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        if (updateBanner != null) item(key = "update") { updateBanner() }
         if (banner != null) item { banner() }
 
         item(key = "shortcuts") {

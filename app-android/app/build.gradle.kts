@@ -1,7 +1,22 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+}
+
+// Versión de la app: la cambia herramientas\publicar-beta.ps1 al sacar una versión nueva.
+// versionCode sale de la versión (0.10.0 → 1000) para que siempre suba.
+val hilvanaVersion = "0.9.0"
+val hilvanaVersionCode = hilvanaVersion.split(".").map { it.toInt() }
+    .let { (major, minor, patch) -> major * 10_000 + minor * 100 + patch }
+
+// Llave de firma para las versiones que se comparten (beta y Play). Vive FUERA del repo, en
+// ~/.hilvana/keystore.properties; sin ese archivo la versión release sale sin firmar.
+val keystoreFile = file("${System.getProperty("user.home")}/.hilvana/keystore.properties")
+val keystore = Properties().apply {
+    if (keystoreFile.exists()) keystoreFile.inputStream().use { load(it) }
 }
 
 android {
@@ -14,14 +29,26 @@ android {
         applicationId = "com.hilvana.app"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = hilvanaVersionCode
+        versionName = hilvanaVersion
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (keystoreFile.exists()) {
+            create("release") {
+                storeFile = file(keystore.getProperty("storeFile"))
+                storePassword = keystore.getProperty("storePassword")
+                keyAlias = keystore.getProperty("keyAlias")
+                keyPassword = keystore.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             optimization {
                 enable = true
                 packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
@@ -34,6 +61,8 @@ android {
     }
     buildFeatures {
         compose = true
+        // BuildConfig.VERSION_NAME: para comparar con la última versión publicada en GitHub.
+        buildConfig = true
     }
 }
 

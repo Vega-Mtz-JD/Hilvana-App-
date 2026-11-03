@@ -80,6 +80,7 @@ fun SettingsScreen(
     dynamicColor: Boolean,
     onDynamicColorChange: (Boolean) -> Unit,
     cloudCard: @Composable () -> Unit,
+    versionCard: @Composable () -> Unit,
 ) {
     val createBackup = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/zip")
@@ -266,6 +267,9 @@ fun SettingsScreen(
                     )
                 }
             }
+
+            Text("Versión de prueba", style = MaterialTheme.typography.titleMedium)
+            versionCard()
 
             Text("Permisos", style = MaterialTheme.typography.titleMedium)
             if (permissions.allGranted) {

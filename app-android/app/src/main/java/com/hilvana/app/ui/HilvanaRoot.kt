@@ -53,6 +53,8 @@ import com.hilvana.app.ui.screens.CloudBackupCard
 import com.hilvana.app.ui.stats.StatsScreen
 import com.hilvana.app.ui.stats.StatsCalculator
 import com.hilvana.app.ui.components.DailyGoalCard
+import com.hilvana.app.ui.components.UpdateBanner
+import com.hilvana.app.ui.components.VersionCard
 import com.hilvana.app.ui.screens.InboxScreen
 import java.time.LocalDate
 import java.time.ZoneId
@@ -110,6 +112,7 @@ fun HilvanaRoot(
     val nudgeHours by viewModel.nudgeHours.collectAsStateWithLifecycle()
     val dailyGoal by viewModel.dailyGoal.collectAsStateWithLifecycle()
     val linkPreviews by viewModel.linkPreviews.collectAsStateWithLifecycle()
+    val availableUpdate by viewModel.availableUpdate.collectAsStateWithLifecycle()
     // Mientras no se desbloquee, las notas de carpetas protegidas no se muestran en ningún lado.
     val lockedFolderIds = folders.filter { it.locked }.map { it.id }.toSet()
     val items = if (unlocked || lockedFolderIds.isEmpty()) allItems
@@ -225,6 +228,15 @@ fun HilvanaRoot(
                     onDisconnect = viewModel::disconnectGoogle,
                 )
             },
+            versionCard = {
+                val updateChecks by viewModel.updateChecks.collectAsStateWithLifecycle()
+                VersionCard(
+                    updateChecks = updateChecks,
+                    onUpdateChecksChange = viewModel::setUpdateChecks,
+                    onCheckNow = viewModel::checkForUpdatesNow,
+                    available = availableUpdate,
+                )
+            },
         )
         return
     }
@@ -314,6 +326,9 @@ fun HilvanaRoot(
                 },
                 onOpenCalendar = { tab = Tab.CALENDAR },
                 modifier = contentModifier,
+                updateBanner = availableUpdate?.let { release ->
+                    { UpdateBanner(release, onLater = viewModel::dismissUpdate) }
+                },
                 banner = if (permissions.allGranted) null else {
                     { SetupBanner(onOpenSettings = { showSettings = true }) }
                 },

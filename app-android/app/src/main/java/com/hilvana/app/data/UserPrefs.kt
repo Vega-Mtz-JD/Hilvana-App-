@@ -2,6 +2,7 @@ package com.hilvana.app.data
 
 import android.content.Context
 import androidx.core.content.edit
+import com.hilvana.app.data.update.AppRelease
 import com.hilvana.app.ui.search.SortOrder
 import com.hilvana.app.ui.theme.ThemeMode
 
@@ -72,6 +73,37 @@ class UserPrefs(context: Context) {
         get() = prefs.getBoolean(KEY_LINK_PREVIEWS, true)
         set(value) = prefs.edit { putBoolean(KEY_LINK_PREVIEWS, value) }
 
+    /** Avisar cuando hay una versión de prueba nueva en GitHub. */
+    var updateChecks: Boolean
+        get() = prefs.getBoolean(KEY_UPDATE_CHECKS, true)
+        set(value) = prefs.edit { putBoolean(KEY_UPDATE_CHECKS, value) }
+
+    var lastUpdateCheckAt: Long
+        get() = prefs.getLong(KEY_UPDATE_LAST_CHECK, 0L)
+        set(value) = prefs.edit { putLong(KEY_UPDATE_LAST_CHECK, value) }
+
+    /** La última versión encontrada en GitHub (para no preguntar a cada rato). */
+    var latestRelease: AppRelease?
+        get() = prefs.getString(KEY_UPDATE_VERSION, null)?.let { version ->
+            AppRelease(
+                version = version,
+                pageUrl = prefs.getString(KEY_UPDATE_PAGE, "").orEmpty(),
+                apkUrl = prefs.getString(KEY_UPDATE_APK, null),
+                notes = prefs.getString(KEY_UPDATE_NOTES, "").orEmpty(),
+            )
+        }
+        set(value) = prefs.edit {
+            putString(KEY_UPDATE_VERSION, value?.version)
+            putString(KEY_UPDATE_PAGE, value?.pageUrl)
+            putString(KEY_UPDATE_APK, value?.apkUrl)
+            putString(KEY_UPDATE_NOTES, value?.notes)
+        }
+
+    /** Versión cuyo aviso el usuario cerró con "Después". */
+    var dismissedUpdate: String
+        get() = prefs.getString(KEY_UPDATE_DISMISSED, "").orEmpty()
+        set(value) = prefs.edit { putString(KEY_UPDATE_DISMISSED, value) }
+
     /** Cómo se ordenan las notas en la pestaña Notas. */
     var notesSort: SortOrder
         get() = SortOrder.entries.firstOrNull { it.name == prefs.getString(KEY_NOTES_SORT, null) } ?: SortOrder.NEWEST
@@ -95,6 +127,13 @@ class UserPrefs(context: Context) {
     private companion object {
         const val KEY_RECENT_FOLDERS = "recent_folders"
         const val KEY_NOTES_SORT = "notes_sort"
+        const val KEY_UPDATE_CHECKS = "update_checks"
+        const val KEY_UPDATE_LAST_CHECK = "update_last_check"
+        const val KEY_UPDATE_VERSION = "update_version"
+        const val KEY_UPDATE_PAGE = "update_page"
+        const val KEY_UPDATE_APK = "update_apk"
+        const val KEY_UPDATE_NOTES = "update_notes"
+        const val KEY_UPDATE_DISMISSED = "update_dismissed"
         const val KEY_GOOGLE_EMAIL = "google_email"
         const val KEY_GOOGLE_NAME = "google_name"
         const val KEY_CLOUD_AUTO = "cloud_auto_backup"
