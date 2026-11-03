@@ -63,7 +63,7 @@ import com.hilvana.app.ui.screens.TasksScreen
 import com.hilvana.app.ui.screens.TodayScreen
 
 private enum class Tab(val label: String, val icon: ImageVector, val newItemType: ItemType) {
-    TODAY("Hoy", Icons.Filled.Home, ItemType.TASK),
+    TODAY("Inicio", Icons.Filled.Home, ItemType.TASK),
     INBOX("Bandeja", Icons.Filled.Email, ItemType.NOTE),
     NOTES("Notas", Icons.Filled.Edit, ItemType.NOTE),
     TASKS("Tareas", Icons.Filled.CheckCircle, ItemType.TASK),
@@ -303,8 +303,16 @@ fun HilvanaRoot(
         when (tab) {
             Tab.TODAY -> TodayScreen(
                 items = items,
+                folders = folders,
                 onOpen = open,
                 onToggleDone = viewModel::toggleDone,
+                onOpenInbox = { tab = Tab.INBOX },
+                onOpenTasks = { tab = Tab.TASKS },
+                onOpenNotes = {
+                    openFolderId = null
+                    tab = Tab.NOTES
+                },
+                onOpenCalendar = { tab = Tab.CALENDAR },
                 modifier = contentModifier,
                 banner = if (permissions.allGranted) null else {
                     { SetupBanner(onOpenSettings = { showSettings = true }) }

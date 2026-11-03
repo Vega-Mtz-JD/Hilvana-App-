@@ -35,7 +35,7 @@ control también inicie la burbuja (hoy abre el panel de captura).
 - La captura sin burbuja sigue en: Compartir → Hilvana, mantener presionado el ícono y el widget
   Captura rápida.
 
-## 3. Pantalla de inicio más útil (y mejoras en las otras pestañas) `[ ]`
+## 3. Pantalla de inicio más útil (y mejoras en las otras pestañas) `[p]`
 
 **Lo que pidió:** "Hoy" casi no muestra nada; que sea más eficiente, que muestre cosas como la Bandeja,
 y mejorar algo en las demás pestañas.
