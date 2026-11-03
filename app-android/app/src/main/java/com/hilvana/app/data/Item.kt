@@ -23,6 +23,8 @@ enum class ItemType(val label: String) {
 data class Item(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val text: String,
+    /** Título opcional: el encabezado de la nota (p. ej. el nombre de un link). */
+    val title: String? = null,
     val type: ItemType = ItemType.NOTE,
     val inInbox: Boolean = true,
     val done: Boolean = false,

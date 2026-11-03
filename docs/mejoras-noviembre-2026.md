@@ -7,7 +7,7 @@ Estado: `[ ]` pendiente · `[x]` hecho (subido a `main`) · `[p]` hecho pero fal
 
 ---
 
-## 1. Título en las notas `[ ]`
+## 1. Título en las notas `[p]`
 
 **Lo que pidió:** al guardar un link, pegarlo sin amontonar palabras. Quiere un campo de **título** aparte,
 que en la nota se vea como encabezado (del link, de la descripción o de la idea).

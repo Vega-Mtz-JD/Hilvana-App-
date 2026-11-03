@@ -144,11 +144,11 @@ class CaptureActivity : ComponentActivity() {
                         onDictate = { dictate() },
                         dictatedText = dictated,
                         onDictationConsumed = { dictated = null },
-                        onSave = { text, type, dueAt, folderId, priority, repeat ->
+                        onSave = { text, title, type, dueAt, folderId, priority, repeat ->
                             lifecycleScope.launch {
                                 saveCapture(
                                     this@CaptureActivity, text, type, dueAt, folderId, imagePath, priority, repeat,
-                                    audioPath, audioDurationMs,
+                                    audioPath, audioDurationMs, title,
                                 )
                                 saved = true
                                 finish()

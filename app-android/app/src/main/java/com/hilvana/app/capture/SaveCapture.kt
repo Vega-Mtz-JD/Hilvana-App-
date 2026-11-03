@@ -25,11 +25,13 @@ suspend fun saveCapture(
     repeat: RepeatRule? = null,
     audioPath: String? = null,
     audioDurationMs: Long? = null,
+    title: String? = null,
 ) {
     val app = context.applicationContext
     app.repository.save(
         Item(
             text = text,
+            title = title,
             type = type,
             dueAt = dueAt,
             folderId = folderId,

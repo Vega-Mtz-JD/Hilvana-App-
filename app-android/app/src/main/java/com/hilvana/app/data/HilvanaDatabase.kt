@@ -8,7 +8,7 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [Item::class, Folder::class], version = 10, exportSchema = false)
+@Database(entities = [Item::class, Folder::class], version = 11, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class HilvanaDatabase : RoomDatabase() {
     abstract fun itemDao(): ItemDao
@@ -19,7 +19,7 @@ abstract class HilvanaDatabase : RoomDatabase() {
             Room.databaseBuilder(context, HilvanaDatabase::class.java, "hilvana.db")
                 .addMigrations(
                     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
-                    MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10,
+                    MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11,
                 )
                 .addCallback(SeedFolders)
                 .build()
@@ -108,6 +108,12 @@ abstract class HilvanaDatabase : RoomDatabase() {
         private val MIGRATION_9_10 = object : Migration(9, 10) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE folders ADD COLUMN category TEXT")
+            }
+        }
+
+        private val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE items ADD COLUMN title TEXT")
             }
         }
 

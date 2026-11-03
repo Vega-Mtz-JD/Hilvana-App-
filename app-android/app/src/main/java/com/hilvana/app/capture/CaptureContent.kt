@@ -74,6 +74,9 @@ import kotlinx.coroutines.launch
 /** "Sin carpeta" elegido a mano (distinto de "no elegí nada", que usa la última carpeta). */
 private const val NO_FOLDER = -1L
 
+/** Largo máximo del título de una nota. */
+const val TITLE_MAX = 80
+
 /**
  * Mini-panel de captura. Lo usan la burbuja (ventana superpuesta) y CaptureActivity
  * (Compartir, mosaico de Ajustes rápidos, acceso directo y widget).
@@ -89,7 +92,7 @@ fun CaptureContent(
     imagePath: String?,
     onImageChange: (String?) -> Unit,
     onPickImage: (currentText: String) -> Unit,
-    onSave: (text: String, type: ItemType, dueAt: Long?, folderId: Long?, priority: Int, repeat: RepeatRule?) -> Unit,
+    onSave: (text: String, title: String?, type: ItemType, dueAt: Long?, folderId: Long?, priority: Int, repeat: RepeatRule?) -> Unit,
     onDismiss: () -> Unit,
     initialText: String = "",
     /** Nota de voz grabada (la administra quien muestra el panel, igual que la imagen). */
@@ -114,6 +117,7 @@ fun CaptureContent(
     val focusManager = LocalFocusManager.current
 
     var text by rememberSaveable { mutableStateOf(initialText) }
+    var title by rememberSaveable { mutableStateOf("") }
     var selectedType by remember { mutableStateOf<ItemType?>(null) }
     var selectedFolderId by remember { mutableStateOf<Long?>(null) }
     var quickTime by remember { mutableStateOf<QuickTime?>(null) }
@@ -228,6 +232,18 @@ fun CaptureContent(
 
                 // Primero: qué se va a guardar. Separado del resto para no confundir.
                 TypeSelector(selected = shownType, onSelect = { selectedType = it })
+
+                // Notas: un título aparte para no mezclarlo con el link o la descripción.
+                if (isNote) {
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it.take(TITLE_MAX) },
+                        label = { Text("Título (opcional)") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
 
                 OutlinedTextField(
                     value = text,
@@ -408,11 +424,17 @@ fun CaptureContent(
                                 usesPrefix -> parsed.textAfterPrefix
                                 usesDetection || usesPriorityWords -> parsed.text
                                 else -> text.trim()
-                            }.ifBlank { text.trim() }.ifBlank { if (imagePath != null) "Imagen" else "Nota de voz" }
-                            onSave(finalText, shownType, reminderDue, effectiveFolder?.id, priority, repeat)
+                            }.ifBlank { text.trim() }
+                            val finalTitle = title.trim().takeIf { isNote && it.isNotEmpty() }
+                            // Solo título: se guarda como texto para que la nota no quede vacía.
+                            val bodyText = finalText.ifBlank {
+                                finalTitle ?: if (imagePath != null) "Imagen" else "Nota de voz"
+                            }
+                            val savedTitle = finalTitle.takeIf { finalText.isNotBlank() }
+                            onSave(bodyText, savedTitle, shownType, reminderDue, effectiveFolder?.id, priority, repeat)
                         },
                         // Con imagen se puede guardar sin texto; un recordatorio necesita hora.
-                        enabled = (text.isNotBlank() || imagePath != null || audioPath != null) &&
+                        enabled = (text.isNotBlank() || (isNote && title.isNotBlank()) || imagePath != null || audioPath != null) &&
                             (!isReminder || reminderDue != null),
                     ) { Text("Guardar") }
                 }

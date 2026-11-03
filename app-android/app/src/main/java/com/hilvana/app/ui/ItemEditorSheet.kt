@@ -51,6 +51,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.rememberCoroutineScope
+import com.hilvana.app.capture.TITLE_MAX
 import com.hilvana.app.data.Folder
 import com.hilvana.app.data.ImageStore
 import com.hilvana.app.data.Item
@@ -94,6 +95,7 @@ fun ItemEditorSheet(
 ) {
     val isNew = item.id == 0L
     var text by rememberSaveable { mutableStateOf(item.text) }
+    var title by rememberSaveable { mutableStateOf(item.title.orEmpty()) }
     var type by rememberSaveable { mutableStateOf(item.type) }
     var dueAt by rememberSaveable { mutableStateOf(item.dueAt) }
     var done by rememberSaveable { mutableStateOf(item.done) }
@@ -132,7 +134,9 @@ fun ItemEditorSheet(
     }
 
     val canHaveDate = type.isActionable
-    val canSave = (text.isNotBlank() || imagePath != null || audioPath != null) &&
+    val isNote = type == ItemType.NOTE
+    val cleanTitle = title.trim().takeIf { isNote && it.isNotEmpty() }
+    val canSave = (text.isNotBlank() || cleanTitle != null || imagePath != null || audioPath != null) &&
         (type != ItemType.REMINDER || dueAt != null)
 
     ModalBottomSheet(
@@ -152,6 +156,17 @@ fun ItemEditorSheet(
             Text(if (isNew) "Nuevo" else "Editar", style = MaterialTheme.typography.titleLarge)
 
             TypeSelector(selected = type, onSelect = { type = it })
+
+            if (isNote) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it.take(TITLE_MAX) },
+                    label = { Text("Título (opcional)") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
 
             OutlinedTextField(
                 value = text,
@@ -300,7 +315,10 @@ fun ItemEditorSheet(
                         onSave(
                             item.copy(
                                 // Una imagen sola también es una nota válida.
-                                text = text.trim().ifBlank { if (imagePath != null) "Imagen" else "Nota de voz" },
+                                text = text.trim().ifBlank {
+                                    cleanTitle ?: if (imagePath != null) "Imagen" else "Nota de voz"
+                                },
+                                title = cleanTitle.takeIf { text.isNotBlank() },
                                 imagePath = imagePath,
                                 type = type,
                                 dueAt = if (canHaveDate) dueAt else null,

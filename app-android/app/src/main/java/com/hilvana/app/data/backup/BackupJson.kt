@@ -43,6 +43,7 @@ object BackupJson {
             .put("items", JSONArray(items.map { item ->
                 JSONObject()
                     .put("text", item.text)
+                    .put("title", item.title ?: JSONObject.NULL)
                     .put("type", item.type.name)
                     .put("inInbox", item.inInbox)
                     .put("done", item.done)
@@ -88,6 +89,7 @@ object BackupJson {
             BackupItem(
                 item = Item(
                     text = i.getString("text"),
+                    title = if (i.isNull("title")) null else i.optString("title").ifBlank { null },
                     // Tipos de versiones viejas (p. ej. "IDEA") se leen como Nota.
                     type = ItemType.entries.firstOrNull { it.name == i.optString("type") } ?: ItemType.NOTE,
                     inInbox = i.optBoolean("inInbox", false),

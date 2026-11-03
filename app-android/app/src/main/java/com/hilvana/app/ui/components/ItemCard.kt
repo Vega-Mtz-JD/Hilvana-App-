@@ -33,6 +33,7 @@ import com.hilvana.app.ui.search.SearchEngine
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -61,11 +62,11 @@ fun ItemCard(
         if (hasPreview && link != null) item.text.replace(link, "").trim() else item.text
     }
     val highlightColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
-    val displayText = remember(shownText, highlight) {
+    val highlighted: (String) -> AnnotatedString = { value ->
         buildAnnotatedString {
-            append(shownText)
+            append(value)
             if (!highlight.isNullOrBlank()) {
-                SearchEngine.highlightRanges(shownText, highlight).forEach { range ->
+                SearchEngine.highlightRanges(value, highlight).forEach { range ->
                     addStyle(
                         SpanStyle(fontWeight = FontWeight.Bold, background = highlightColor),
                         range.first,
@@ -75,6 +76,8 @@ fun ItemCard(
             }
         }
     }
+    val displayText = remember(shownText, highlight) { highlighted(shownText) }
+    val displayTitle = remember(item.title, highlight) { item.title?.let(highlighted) }
     val showCheckbox = item.type.isActionable && onToggleDone != null
     val uriHandler = LocalUriHandler.current
     val openLink = {
@@ -98,6 +101,16 @@ fun ItemCard(
                     .padding(vertical = 6.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
+                if (displayTitle != null) {
+                    Text(
+                        text = displayTitle,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        textDecoration = if (item.done) TextDecoration.LineThrough else null,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 if (shownText.isNotBlank()) {
                     Text(
                         text = displayText,

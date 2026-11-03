@@ -27,6 +27,7 @@ import com.hilvana.app.ui.theme.HilvanaTheme
 /** Lo que se guarda desde el panel de la burbuja. */
 data class Captured(
     val text: String,
+    val title: String?,
     val type: ItemType,
     val dueAt: Long?,
     val folderId: Long?,
@@ -76,8 +77,8 @@ class CapturePanel(
                         onPickImage = { openInActivity(it, CaptureActivity.MODE_IMAGE) },
                         onDictate = { openInActivity(it, CaptureActivity.MODE_DICTATE) },
                         onRecordAudio = { openInActivity(it, CaptureActivity.MODE_RECORD) },
-                        onSave = { text, type, dueAt, folderId, priority, repeat ->
-                            onSave(Captured(text, type, dueAt, folderId, imagePath, priority, repeat))
+                        onSave = { text, title, type, dueAt, folderId, priority, repeat ->
+                            onSave(Captured(text, title, type, dueAt, folderId, imagePath, priority, repeat))
                             imagePath = null // ahora es de la nota guardada
                             dismiss()
                         },

@@ -17,7 +17,7 @@ class BackupTest {
         Folder(id = 2, name = "Claves", icon = "key", createdAt = 200, locked = true),
     )
     private val items = listOf(
-        Item(id = 10, text = "App de recetas", type = ItemType.NOTE, createdAt = 1_000, folderId = 1, inInbox = false),
+        Item(id = 10, text = "https://youtu.be/abc", title = "App de recetas", type = ItemType.NOTE, createdAt = 1_000, folderId = 1, inInbox = false),
         Item(
             id = 11, text = "Llamar a mamá", type = ItemType.REMINDER, dueAt = 5_000, createdAt = 2_000,
             priority = 4, repeatRule = RepeatRule.WEEKLY,
